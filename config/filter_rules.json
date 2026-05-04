@@ -1,0 +1,6 @@
+{
+  "default": {
+    "include": ["faktencheck", "artikel"],
+    "exclude": ["impressum", "kontakt", "ueber-uns"]
+  }
+}
