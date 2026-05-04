@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -11,7 +12,10 @@ def search_sitemap_by_url(portal_name, portal_url):
     """
     urls = set()
 
-    output_file = f"data/raw/{portal_name}_urls.txt"
+    output_dir = "data/raw"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_file = f"{output_dir}/{portal_name}_urls.txt"
     print(f"Searching sitemap for {portal_name}")
 
     try:
