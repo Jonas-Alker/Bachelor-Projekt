@@ -18,26 +18,31 @@ def search_sitemap_by_url(portal_name, portal_url):
     output_file = f"{output_dir}/{portal_name}_urls.txt"
     print(f"Searching sitemap for {portal_name}")
 
-    try:
-        tree = sitemap_tree_for_homepage(portal_url)
-        all_pages = list(tree.all_pages())
-        if all_pages:
-            for page in all_pages:
-                urls.add(page.url)
-    except Exception as e:
-        print(f"Sitemap Error: {e}")
+    #Use usp to get sitemap automatically
+    urls = find_sitemap_automatically(portal_url)
 
     #Fallback if usp does not work
     if not urls:
-        urls = manual_crawl(portal_url)
+        urls = crawl_sitemap_manually(portal_url)
 
     if urls:
         with open(output_file, "w", encoding= "utf-8") as f:
             for url in urls:
                 f.write(f"{url}\n")
 
+def find_sitemap_automatically(url):
+    urls = set()
+    try:
+        tree = sitemap_tree_for_homepage(url)
+        all_pages = list(tree.all_pages())
+        if all_pages:
+            for page in all_pages:
+                urls.add(page.url)
+    except Exception as e:
+        print(f"Sitemap Error: {e}")
+    return urls
 
-def manual_crawl(url):
+def crawl_sitemap_manually(url):
     urls = set()
     to_visit = [url]
     domain = urlparse(url).netloc
