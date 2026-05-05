@@ -7,8 +7,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtuelle Umgebungen
+#Virtuelle Umgebungen
 .venv/
 .env
 *.pyc
 
+#Test Daten
+tests/test_data/

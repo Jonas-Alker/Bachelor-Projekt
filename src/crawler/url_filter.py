@@ -2,14 +2,13 @@ import json
 import os
 
 
-def load_rules(portal_name):
+def load_rules(portal_name, config_path="config/filter_rules.json"):
     """
     :param portal_name:
     :return:
     """
-    config_path = "config/filter_rules.json"
 
-    if  not(os.path.exists(config_path)):
+    if not(os.path.exists(config_path)):
         return ["artikel"],["impressum"]
 
     with open(config_path, "r", encoding="utf-8") as f:
@@ -18,15 +17,15 @@ def load_rules(portal_name):
     portal_rules = rules.get(portal_name, rules.get("default"))
     return portal_rules["include"], portal_rules["exclude"]
 
-def filter_urls(portal_name):
+def filter_urls(portal_name, input_base="data/raw", output_base="data/filtered"):
     include, exclude = load_rules(portal_name)
 
-    input_file = (f"data/raw/{portal_name}_urls.txt")
+    input_file = (f"{input_base}/{portal_name}_urls.txt")
     if not os.path.exists(input_file):
         print(f"Input file {input_file} does not exist")
         return
 
-    output_dir = "data/filtered"
+    output_dir = output_base
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     output_file = (f"{output_dir}/{portal_name}_filtered_urls.txt")
