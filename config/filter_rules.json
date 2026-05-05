@@ -2,5 +2,9 @@
   "default": {
     "include": ["faktencheck", "artikel"],
     "exclude": ["impressum", "kontakt", "ueber-uns"]
+  },
+   "Politifact": {
+    "include": ["factchecks"],
+    "exclude": []
   }
 }
