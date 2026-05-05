@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from usp.tree import sitemap_tree_for_homepage
 
-def search_sitemap_by_url(portal_name, portal_url):
+def search_sitemap_by_url(portal_name, portal_url, base_dir="data/raw"):
     """
     :param portal_name: 
     :param portal_url:
@@ -12,7 +12,7 @@ def search_sitemap_by_url(portal_name, portal_url):
     """
     urls = set()
 
-    output_dir = "data/raw"
+    output_dir = base_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     output_file = f"{output_dir}/{portal_name}_urls.txt"
