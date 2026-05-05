@@ -1,0 +1,7 @@
+[
+  {
+    "_comment": "Examples of data, for setting up portals.json" ,
+    "name": "Exampleporatal (Name of the fact-checking portal)",
+    "url": "https://example.org/ (Domain of the fact-checking portal)"
+  }
+]
