@@ -1,5 +1,7 @@
 import os
 import requests
+import time
+import random
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from usp.tree import sitemap_tree_for_homepage
@@ -54,6 +56,7 @@ def crawl_sitemap_manually(url):
         try:
             urls.add(current_url)
             r= requests.get(current_url)
+            time.sleep(random.uniform(0.1, 0.3))
             soup = BeautifulSoup(r.text, "html.parser")
             for link in soup.find_all("a", href=True):
                 full_url = urljoin(current_url, link["href"]).split('#')[0].rstrip('/')
