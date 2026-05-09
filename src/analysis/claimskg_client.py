@@ -2,8 +2,23 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 
-def get_urls_from_claimskg(source_name):
+def get_urls_from_claimskg(source_name,year_start= None, year_end= None):
     sparql = SPARQLWrapper("https://data.gesis.org/claimskg/sparql")
+
+    if year_start and year_end:
+        date_filter = f"""
+        schema:datePublished ?date BIND (year(?date) AS ?year)FILTER(?year >= {year_start} && ?year <= {year_end})
+    """
+
+    if year_start and not year_end:
+        date_filter = f"""
+           schema:datePublished ?date BIND (year(?date) AS ?year)FILTER(?year >= {year_start})
+       """
+
+    if not year_start and year_end:
+        date_filter = f"""
+             schema:datePublished ?date BIND (year(?date) AS ?year)FILTER(?year <= {year_end})
+         """
 
     prefix= """
     PREFIX schema: <http://schema.org/>
@@ -20,7 +35,8 @@ def get_urls_from_claimskg(source_name):
     SELECT DISTINCT ?url WHERE {{
     ?claimReview a schema:ClaimReview ;
                schema:url ?url ;
-               schema:author <http://data.gesis.org/claimskg/organization/{portal}> .
+               schema:author <http://data.gesis.org/claimskg/organization/{portal}>;
+               {date_filter}.
     }}
     """
 

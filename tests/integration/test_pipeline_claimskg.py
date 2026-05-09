@@ -20,12 +20,16 @@ def test_url_extrakion():
         os.makedirs(analyse_dir)
 
 
-    claimskg_urls = get_urls_from_claimskg(portal)
+
+    claimskg_urls = get_urls_from_claimskg(portal, year_end= 2013)
+    claimskg_urls.update(get_urls_from_claimskg(portal, year_start=2016, year_end=2020))
+    claimskg_urls.update(get_urls_from_claimskg(portal, year_start=2021))
     assert len(claimskg_urls) > 0
 
     search_sitemap_by_url(portal, url, base_dir= raw_dir)
     filter_urls(portal, input_base = raw_dir, output_base=filtered_dir)
 
+    print("Test")
     file_new_data = f"{analyse_dir}/{portal}_new_urls.txt"
     file_missing_data = f"{analyse_dir}/{portal}_missing_from_crawler_urls.txt"
 
