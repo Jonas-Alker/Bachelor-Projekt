@@ -29,6 +29,7 @@ def find_sitemap_automatically(start_url, portal, db):
     :return: True if pages were successfully found and processed via the sitemap;
         False otherwise (or if an error occurred).
     """
+    all_pages = []
     try:
         tree = sitemap_tree_for_homepage(start_url)
         all_pages = list(tree.all_pages())
