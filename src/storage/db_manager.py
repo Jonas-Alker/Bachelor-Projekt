@@ -1,24 +1,35 @@
 import sqlite3
-
 import os
-
+import shutil
 
 class DBManager:
-    def __init__(self, version= "v1", mode="create", base_path="data/raw/"):
+    def __init__(self, version= "v1", mode="create", base_path="data/raw/", source_path = None):
         """Initializes the DBManager and establishes the database file path.
 
         :param version: The version string of the database (used in the filename).
-        :param mode: Operation mode; "create" initializes a new DB, "load" expects an existing one.
+        :param mode: Operation mode; "create" initializes a new DB, "load" expects an existing one
+            and "copy" duplicates an existing database file to the new destination.
         :param base_path: The directory path where the database file will be stored.
 
         Raises:
-            FileNotFoundError: If mode is "load" but the database file does not exist.
+            FileNotFoundError: If mode is "load" but the database file does not exist,
+                or if mode is "copy" but the source_path file does not exist.
+            ValueError: If mode is "copy" but no source_path is provided.
         """
         self.db_path = os.path.join(base_path, f"factencheck_{version}.db")
 
         if mode == "load":
             if not os.path.exists(self.db_path):
                 raise FileNotFoundError(f"Version {version} of db file not found: {self.db_path}")
+
+        elif mode == "copy":
+            if not source_path:
+                raise ValueError("source_path must be provided when mode is 'copy'")
+            if not os.path.exists(source_path):
+                raise FileNotFoundError(f"Source database file not found: {source_path}")
+            if not os.path.exists(base_path):
+                os.makedirs(base_path)
+            shutil.copy2(source_path, self.db_path)
 
         else: # mode == "create"
             if not os.path.exists(base_path):
