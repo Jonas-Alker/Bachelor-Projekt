@@ -3,9 +3,15 @@ import os
 
 
 def load_rules(portal_name, config_path="config/filter_rules.json"):
-    """
-    :param portal_name:
-    :return:
+    """Loads inclusion and exclusion rules for a specific portal from a JSON config file.
+    If the specified portal configuration does not exist, it falls back to a 'default' rule set.
+    If the entire configuration file is missing, hardcoded fallback lists
+    are returned.
+
+    :param portal_name: The name of the specific web portal.
+    :param config_path: The file path to the JSON configuration file.
+    :return: A tuple containing two lists of strings: (include_rules, exclude_rules).
+
     """
 
     if not(os.path.exists(config_path)):

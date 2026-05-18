@@ -2,6 +2,13 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 
 def extract_sublinks(html, base_url, domain):
+    """Extracts all valid, internal sublinks from an HTML content string.
+
+    :param html: The raw HTML content string to parse.
+    :param base_url: The base URL used to resolve relative hyperlinks.
+    :param domain: The specific domain name (e.g., "example.com") to filter internal links.
+    :return:
+    """
     soup = BeautifulSoup(html, "html.parser")
     found_links = set()
 

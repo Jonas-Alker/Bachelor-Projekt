@@ -5,9 +5,9 @@ from usp.tree import sitemap_tree_for_homepage
 
 def search_sitemap_by_url(portal_name, portal_url, db):
     """
-    :param portal_name: 
+    :param portal_name:
     :param portal_url:
-    :return: 
+    :return:
     """
     #Use usp to get sitemap automatically
     confirm = find_sitemap_automatically(portal_url, portal_name, db)

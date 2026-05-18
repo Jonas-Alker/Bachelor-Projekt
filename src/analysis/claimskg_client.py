@@ -1,6 +1,16 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
 
 def get_urls_from_claimskg(source_name,year_start= None, year_end= None):
+    """Fetches a unique set of fact-checking URLs from ClaimsKG via a SPARQL query
+    The queries can be optionally filtered by a publication year range (start year,
+    end year, or both).
+
+    :param source_name: The name of the fact-checking portal.
+    :param year_start: The optional starting year for filtering results
+    :param year_end: The optional ending year for filtering results
+    :return: A set of unique URL strings retrieved from the ClaimsKG platform.
+        Returns an empty set if no results are found or if an error occurs.
+    """
     sparql = SPARQLWrapper("https://data.gesis.org/claimskg/sparql")
     date_filter = ""
 
