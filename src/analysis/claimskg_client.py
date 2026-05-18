@@ -1,9 +1,8 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
 
-
-
 def get_urls_from_claimskg(source_name,year_start= None, year_end= None):
     sparql = SPARQLWrapper("https://data.gesis.org/claimskg/sparql")
+    date_filter = ""
 
     if year_start and year_end:
         date_filter = f"""
