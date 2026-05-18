@@ -20,7 +20,7 @@ def load_rules(portal_name, config_path="config/filter_rules.json"):
     portal_rules = rules.get(portal_name, rules.get("default"))
     return portal_rules["include"], portal_rules["exclude"]
 
-def filter_url(url, include,exclude):
+def filter_url(url, include, exclude):
     """Determines whether a given URL should be kept based on include and exclude rules
 
     :param url: The URL string to evaluate.

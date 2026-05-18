@@ -1,5 +1,6 @@
 import src.crawler.requester as requester
 import src.crawler.link_parser as link_parser
+import src.crawler.url_filter as url_filter
 from urllib.parse import urlparse
 from usp.tree import sitemap_tree_for_homepage
 
@@ -57,7 +58,7 @@ def crawl_sitemap_manually(start_url, portal, db):
     visited_urls = set(db.get_urls_by_portal(portal))
     to_visit = {start_url: None}
     domain = urlparse(start_url).netloc
-
+    include, exclude = url_filter.load_rules(portal)
     while to_visit:
         current_url = next(iter(to_visit))
 
@@ -68,12 +69,14 @@ def crawl_sitemap_manually(start_url, portal, db):
             r = requester.fetch_page(current_url)
             visited_urls.add(current_url)
 
-            db.save_html(current_url, portal, r)
+            if url_filter.filter_url(current_url, include, exclude):
+                db.save_html(current_url, portal, r)
             found_links = link_parser.extract_sublinks(r, current_url, domain)
 
             for link in found_links:
                 if link not in visited_urls:
                     to_visit[link] = None
+                    
             del to_visit[current_url]
         except Exception as e:
             print(f"Sitemap Manual Crawl Error: {e}")
