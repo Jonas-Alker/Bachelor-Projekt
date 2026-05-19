@@ -1,47 +1,61 @@
-import os
 from src.crawler.url_filter import (
     load_rules,
-    filter_urls
-)
+    filter_url)
+from unittest.mock import mock_open, patch
 
-def test_load_rules_fallback():
-    include, exclude = load_rules("does_not_exist")
-    include_default, exclude_default = load_rules("default")
+@patch('src.crawler.url_filter.os.path.exists')
+def test_load_rules_file_not_exist(mock_exists):
+    mock_exists.return_value = False
+    include, exclude = load_rules("example_portal")
 
+    assert include == ["artikel"]
+    assert exclude == ["impressum"]
+
+@patch('src.crawler.url_filter.os.path.exists')
+def test_load_rules_fallback(mock_exists):
+    mock_exists.return_value = True
+    json_content = """
+        {
+            "default": {
+                "include": ["faktencheck", "artikel"],
+                "exclude": ["impressum", "kontakt", "ueber-uns"]
+            }
+        }
+        """
+    with patch('src.crawler.url_filter.open', mock_open(read_data=json_content)):
+        include, exclude = load_rules("does_not_exist")
+        include_default, exclude_default = load_rules("default")
+
+    assert include == ["faktencheck", "artikel"]
+    assert exclude == ["impressum", "kontakt", "ueber-uns"]
     assert include == include_default
     assert exclude == exclude_default
 
-def test_filter_logic():
-    test_iput_dir = "tests/test_data/raw"
-    test_output_dir = "tests/test_data/filtered"
-    portal_name = "test_portal"
+def test_filter_url_allowed():
+    url = "https://www.politifact.com/artikel/2026/factcheck-something"
+    include = ["artikel", "faktencheck"]
+    exclude = ["impressum", "kontakt"]
 
-    input_path = f"{test_iput_dir}/{portal_name}_urls.txt"
-    output_path = f"{test_output_dir}/{portal_name}_filtered_urls.txt"
+    assert filter_url(url, include, exclude) is True
 
-    if not os.path.exists(test_iput_dir):
-        os.makedirs(test_iput_dir)
+def test_filter_url_excluded():
+    url = "https://www.politifact.com/legal/impressum"
+    include = ["artikel"]
+    exclude = ["impressum", "kontakt"]
 
-    if os.path.exists(input_path):
-        os.remove(input_path)
+    assert filter_url(url, include, exclude) is False
 
-    if os.path.exists(output_path):
-        os.remove(output_path)
+def test_filter_url_no_match():
+    url = "https://www.politifact.com/main-page"
+    include = ["artikel"]
+    exclude = ["impressum"]
 
-    with open(input_path, "w", encoding="utf-8") as f:
-        f.write("https://mimikama.org/artikel-1\n")
-        f.write("https://mimikama.org/faktencheck-2\n")
-        f.write("https://mimikama.org/impressum\n")
-        f.write("https://mimikama.org/news\n")
-
-    filter_urls(portal_name, input_base= test_iput_dir, output_base= test_output_dir)
+    assert filter_url(url, include, exclude) is False
 
 
-    assert os.path.exists(output_path)
+def test_filter_url_conflict_exclude_wins():
+    url = "https://www.politifact.com/artikel/how-to-kontakt"
+    include = ["artikel"]
+    exclude = ["kontakt", "impressum"]
 
-    with open(output_path, "r", encoding="utf-8") as f:
-        content = f.read()
-        assert "artikel-1" in content
-        assert "faktencheck-2" in content
-        assert "news" not in content
-        assert "impressum" not in content
+    assert filter_url(url, include, exclude) is False
