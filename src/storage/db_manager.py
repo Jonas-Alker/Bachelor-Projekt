@@ -110,3 +110,32 @@ class DBManager:
             cursor = conn.execute("SELECT url FROM web_cache WHERE portal = ?", (portal,))
             urls = [row[0] for row in cursor.fetchall()]
             return urls
+
+    def delete_url(self, url):
+        """Deletes the URL associated with a specific portal.
+
+        :param url: The URL of the website entry to be deleted.
+        """
+        try:
+            with self._get_connection() as conn:
+                conn.execute("DELETE FROM web_cache WHERE url = ?", (url,))
+                conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error: {e}")
+
+    def delete_urls_bulk(self, url_list):
+        """Efficiently deletes a list of URLs in a single transaction.
+
+        :param url_list: A list of URL strings
+        """
+        if not url_list:
+            return
+
+        formatted_data = [(url,) for url in url_list]
+
+        try:
+            with self._get_connection() as conn:
+                conn.executemany("DELETE FROM web_cache WHERE url = ?", formatted_data)
+                conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error: {e}")
