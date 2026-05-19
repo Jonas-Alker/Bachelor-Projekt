@@ -5,6 +5,6 @@
   },
    "Politifact": {
     "include": ["factchecks"],
-    "exclude": []
+    "exclude": ["factchecks/list", "search/factchecks","politifact.com/article","politifact.com/rss"]
   }
 }
