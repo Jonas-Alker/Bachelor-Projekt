@@ -35,9 +35,11 @@ def find_sitemap_automatically(start_url, portal, db):
         tree = sitemap_tree_for_homepage(start_url)
         all_pages = list(tree.all_pages())
         if all_pages:
+            include, exclude = url_filter.load_rules(portal)
             for page in all_pages:
-                r = requester.fetch_page(page)
-                db.save_html(page, portal, r)
+                if url_filter.filter_url(page, include, exclude):
+                    r = requester.fetch_page(page)
+                    db.save_html(page, portal, r)
 
     except Exception as e:
         print(f"Sitemap Error: {e}")
