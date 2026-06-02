@@ -1,0 +1,35 @@
+[
+  {
+    "input_html":"",
+    "expected_output": {
+        "claim": "",
+        "artikel_datum": "",
+        "sparache": "",
+        "claim_datum": "",
+        "titel": "",
+        "rating": ""
+    }
+  },
+  {
+    "input_html":"",
+    "expected_output": {
+        "claim": "",
+        "artikel_datum": "",
+        "sparache": "",
+        "claim_datum": "",
+        "titel": "",
+        "rating": ""
+    }
+  },
+  {
+    "input_html":"",
+    "expected_output": {
+        "claim": "",
+        "artikel_datum": "",
+        "sparache": "",
+        "claim_datum": "",
+        "titel": "",
+        "rating": ""
+    }
+  }
+]
