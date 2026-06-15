@@ -1,6 +1,6 @@
 from src.crawler.sitemap_crawler import search_sitemap_by_url
 from src.crawler.url_filter import filter_url, load_rules
-from src.analysis.claimskg_client import get_urls_from_claimskg
+from evaluation.claimskg_client import get_urls_from_claimskg
 from src.storage.db_manager import DBManager
 
 def test_ClaimsKG_comparision():
