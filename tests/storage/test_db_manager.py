@@ -1,12 +1,12 @@
 import os
 
-from src.storage.db_manager import DBManager
+from src.storage.html_cache_manager import HTMLCacheManager
 import pytest
 
 @pytest.fixture
 def db():
     test_db_path = "tests/test_data/raw"
-    manager = DBManager(version="test_v1", mode= "create",base_path=test_db_path)
+    manager = HTMLCacheManager(version="test_v1", mode= "create",base_path=test_db_path)
     db_file_path = manager.db_path
 
     yield manager
@@ -61,7 +61,7 @@ def test_load_existing_db(db):
     db.save_html(url, portal_name, content)
 
     try:
-        loader = DBManager(version="test_v1", mode= "load",base_path= base_path)
+        loader = HTMLCacheManager(version="test_v1", mode= "load",base_path= base_path)
         assert loader.db_path == db_path
         result = loader.get_full_entry(url)
         assert result is not None
@@ -73,7 +73,7 @@ def test_load_existing_db(db):
 
 def test_load_non_existing_db():
     with pytest.raises(FileNotFoundError) as excinfo:
-        DBManager(version="not-here", mode= "load", base_path="tests/test_data/raw")
+        HTMLCacheManager(version="not-here", mode= "load", base_path="tests/test_data/raw")
     assert "of db file not found:" in str(excinfo)
 
 def test_delete_url(db):
@@ -89,7 +89,7 @@ def test_delete_url(db):
     assert db.get_full_entry(url_to_delete) is None
     assert db.get_full_entry(url_to_keep) is not None
 
-def test_delete_urls_bulk(db: DBManager):
+def test_delete_urls_bulk(db: HTMLCacheManager):
     portal = "TestPortal"
     test_data = [
         ("https://www.test1.com", portal, "content 1"),
