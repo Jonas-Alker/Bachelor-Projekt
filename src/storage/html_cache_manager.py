@@ -2,7 +2,7 @@ import sqlite3
 import os
 import shutil
 
-class DBManager:
+class HTMLCacheManager:
     def __init__(self, version= "v1", mode="create", base_path="data/raw/", source_path = None):
         """Initializes the DBManager and establishes the database file path.
 
@@ -16,7 +16,7 @@ class DBManager:
                 or if mode is "copy" but the source_path file does not exist.
             ValueError: If mode is "copy" but no source_path is provided.
         """
-        self.db_path = os.path.join(base_path, f"factencheck_{version}.db")
+        self.db_path = os.path.join(base_path, f"html_raw_{version}.db")
 
         if mode == "load":
             if not os.path.exists(self.db_path):
@@ -35,6 +35,7 @@ class DBManager:
             if not os.path.exists(base_path):
                 os.makedirs(base_path)
             self._setup_db()
+        self._ensure_indexes()
 
     def _get_connection(self):
         """Creates and returns a connection to the SQLite database.
@@ -66,6 +67,12 @@ class DBManager:
             """)
             conn.commit()
 
+    def _ensure_indexes(self):
+        """Ensures that the indexes exist in the database."""
+        with self._get_connection() as conn:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_crawled_at ON web_cache(crawled_at)")
+            conn.commit()
+
     def get_full_entry(self, url):
         """Retrieves the complete cache record for a specific URL.
 
@@ -74,7 +81,8 @@ class DBManager:
         :return: A dictionary containing 'portal', 'html_content', and 'crawled_at' if the URL exists; None otherwise.
         """
         with self._get_connection() as conn:
-            cursor = conn.execute("SELECT portal, html_content, crawled_at FROM web_cache WHERE url = ?", (url,))
+            cursor = conn.execute(
+                "SELECT portal, html_content, crawled_at FROM web_cache WHERE url = ?", (url,))
             row = cursor.fetchone()
 
             if row:
@@ -95,7 +103,8 @@ class DBManager:
         try:
             with self._get_connection() as conn:
                 conn.execute("""
-                    INSERT OR REPLACE INTO web_cache (url, portal, html_content) VALUES (?, ?, ?)""", (url, portal, html_content))
+                    INSERT OR REPLACE INTO web_cache (url, portal, html_content) VALUES (?, ?, ?)""",
+                             (url, portal, html_content))
                 conn.commit()
         except sqlite3.Error as e:
             print(f"Error: {e}")
@@ -139,3 +148,17 @@ class DBManager:
                 conn.commit()
         except sqlite3.Error as e:
             print(f"Error: {e}")
+
+    def pop_next_page(self):
+        with self._get_connection() as conn:
+            row = conn.execute("""
+                SELECT url, portal, html_content
+                FROM web_cache
+                ORDER BY crawled_at ASC LIMIT 1
+            """).fetchone()
+            if row:
+                page = dict(row)
+                conn.execute("DELETE FROM web_cache WHERE url = ?", (page['url'],))
+                conn.commit()
+                return page
+            return None
