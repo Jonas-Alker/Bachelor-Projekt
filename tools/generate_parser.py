@@ -24,7 +24,7 @@ def load_html(url):
         return response.text
 
     except Exception as e:
-        print(f"Fehler beim Laden der URL: {e}")
+        print(f"Error loading URL: {e}")
         return None
 
 def load_few_shots():
@@ -36,7 +36,7 @@ def load_few_shots():
     for ex in examples:
         few_shots_message.append({
             "role": "user",
-            "content": f"Schreibe jetzt den kompletten Parser für Seiten dieses HTML Typs:\n{ex['input_html']}"})
+            "content": f"Write the complete BeautifulSoup4 parser for this type of HTML page:\n{ex['input_html']}"})
         few_shots_message.append({"role": "assistant", "content": json.dumps(ex["expected_output"])})
     return few_shots_message
 
@@ -50,21 +50,26 @@ def generate_parser(url, portal_name):
     }
 
     system_prompt = (
-        """Du bist ein Senior Data Engineer. Deine Aufgabe ist es, BeautifulSoup4-Parserfür Faktencheck-Webseiten zu 
-        schreiben. Die Funktion muss `parse_faktencheck(html_content)` heißen und nur die Daten nur als JSON-Array 
-        zurück geben. 
-        Jedes Objekt im Array muss folgende Keys enthalten:
-        `claim`, `artikel_datum`, `sprache`, `claim_datum`, `title`, `rating`.
-        Wenn ein Feld nicht exestiert, setzte den Wert auf null.
-        Es können auch mehrere Claims pro hmtl vorhanden sein, in dem Fall füge ein weiteres Objekt dem Array hinzu.
-        Gib AUSSCHLIESSLICH den Python-Code zurück, ohne Erklärungen oder Markdown-Formatierung.
+        """
+        You are a Senior Data Engineer. Your task is to write a BeautifulSoup4 parser script for fact-checking websites.
+        The function must be named `parse_factcheck(html_content)` and must return a Python list of dictionaries (which represents a JSON array).
+        Each dictionary in the list MUST contain exactly the following keys:
+        'headline', 'body', 'claim', 'author', 'published_at', and 'quoted_at' and 'original_rating'.
+        If a field does not exist or cannot be found in the HTML, set its value to `None`.
+        If there are multiple claims in the HTML, add a new dictionary to the list for each claim.
+        CRITICAL DATE DEFINITIONS (The parser code must extract these accurately):
+        - `published_at`: The date when this specific fact-checking article was published.
+        - `quoted_at`: The date when the original claim was made or spoken.
+        The generated Python code must attempt to format extracted dates as 'DD.MM.YYYY'.
+        Do NOT use excessively complex regular expressions (`re.compile`) for class matching to avoid syntax errors; prefer standard string lists.
+        Return EXCLUSIVELY the executable Python code. Do not include markdown formatting like ```python, explanations, or usage examples.
         """
     )
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(load_few_shots())
     messages.append({
         "role": "user",
-        "content": f"Schreibe jetzt den kompletten Parser für Seiten dieses HTML Typs:\n\n{html}"})
+        "content": f"Write the complete BeautifulSoup4 parser for this type of HTML page:\n\n{html}"})
 
     data = {
         "model": MODEL_ID,
@@ -90,7 +95,7 @@ def generate_parser(url, portal_name):
 
 #For testing purposes only during programming
 if __name__ == "__main__":
-    test_url = "https://fullfact.org/health/melanoma-is-not-the-most-common-cancer-globally/"
-    portal_name = "Fullfact"
+    test_url = "https://www.politifact.com/factchecks/2026/may/14/kathy-castor/kid-care-florida-desantis-health-insurance/"
+    portal_name = "Fuhjkgkllfacti"
 
     generate_parser(test_url, portal_name)
