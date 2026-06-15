@@ -65,9 +65,12 @@ def generate_preprocessor(url, portal_name):
         2. Main article text (body)
         3. The claim being evaluated
         4. Author of the article
-        5. Publication date of the article
-        6. The original fact-check rating
-        7. The date the original claim was made/quoted.
+        5. Language of the article
+        6. Author of the claim
+        7. Publication date of the article
+        8. The date the original claim was made/quoted.
+        9. The original fact-check rating
+        
         Return EXCLUSIVELY the executable Python code. Do not include markdown formatting like ```python, explanations, or usage examples.
         """
     )
