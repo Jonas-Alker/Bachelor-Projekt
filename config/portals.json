@@ -2,6 +2,7 @@
   {
     "_comment": "Examples of data, for setting up portals.json" ,
     "name": "Exampleporatal (Name of the fact-checking portal)",
-    "url": "https://example.org/ (Domain of the fact-checking portal)"
+    "url": "https://example.org/ (Domain of the fact-checking portal)",
+    "factcheck_example" : "https://example.org/factcheck/7878912 (Example of one factcheck) "
   }
 ]
