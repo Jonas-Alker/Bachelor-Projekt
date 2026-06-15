@@ -35,12 +35,15 @@ def parse_factcheck(html_content):
         """Analyze the following HTML and extract all relevant fact-checking data.
         The data must be returned ONLY as a JSON array of objects.
         Each object must contain exactly the following keys:
-        'headline', 'body' (the main text of the article), 'claim', 'author', 'published_at',
-        'quoted_at' (when the claim was made) and 'original_rating' (the exact wording from the page).
+        'headline', 'body' (the main text of the article), 'claim', 'author_factcheck', 'published_at', 'language',
+        'author_claim', 'stated_at' (when the claim was made) and 'original_rating' (the exact wording from the page).
         CRITICAL DATE DEFINITIONS:
-        - `published_at`: The date when this specific fact-checking article was published or updated by the fact-checker. 
-        - `quoted_at`: The date when the original claim was made, posted, or spoken by the person or entity being checked. 
+        - 'published_at': The date when this specific fact-checking article was published or updated by the fact-checker. 
+        - 'stated_at': The date when the original claim was made, posted, or spoken by the person or entity being checked. 
         This is usually an older date than published_at.
+        CRITICAL AUTHOR DEFINITIONS:
+        - 'author_factcheck': The author of the fact-checking article, sometime called fact-checker.
+        - 'author_claim': The author of the claim, usually a public figure.
         If information for a specific field does not exist, set the value to null. 
         All dates must be strictly formatted as 'DD.MM.YYYY' (Day. Month. Year).
         There may be multiple claims per HTML document, in that case, add another object to the array.
@@ -64,14 +67,17 @@ def parse_factcheck(html_content):
                     "headline": {"type": ["string","null"]},
                     "body": {"type": ["string","null"]},
                     "claim": {"type": ["string","null"]},
-                    "author": {"type": ["string","null"]},
+                    "author_factcheck": {"type": ["string","null"]},
                     "published_at": {"type": ["string","null"],
                                      "description": "Date formatted strictly as DD:MM:YYYY"},
-                    "quoted_at": {"type": ["string","null"],
+                    "language": {"type": ["string","null"]},
+                    "author_claim": {"type": ["string","null"]},
+                    "stated_at": {"type": ["string","null"],
                                   "description": "Date formatted strictly as DD:MM:YYYY"},
                     "original_rating": {"type": ["string","null"]}
                 },
-                "required": ["headline", "body", "claim", "author","published_at", "quoted_at", "original_rating"],
+                "required": ["headline", "body", "claim", "author_factcheck", "published_at", "language",
+                             "author_claim", "stated_at", "original_rating"],
                 "additionalProperties": False
             }
         },
@@ -101,7 +107,7 @@ def parse_factcheck(html_content):
 
 #For testing purposes only during programming
 if __name__ == "__main__":
-    test_url = "https://fullfact.org/politics/city-council-meeting-video-miscaptioned/"
+    test_url = "https://www.politifact.com/factchecks/2026/jun/10/graham-platner/Susan-Collins-Trump-vote-Maine-senate-election/"
 
     response = requests.get(test_url)
     r = response.text
