@@ -33,7 +33,7 @@ def preprocess(portal_name, html):
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
 
-    if hasattr(module, 'preprocess_faktencheck'):
-        return module.preprocess_faktencheck(html)
+    if hasattr(module, 'preprocess_factcheck'):
+        return module.preprocess_factcheck(html)
     else:
-        raise AttributeError(f"Preprocessor for {portal_name.lower()} has no function preprocess_faktencheck.")
+        raise AttributeError(f"Preprocessor for {portal_name.lower()} has no function preprocess_factcheck.")
