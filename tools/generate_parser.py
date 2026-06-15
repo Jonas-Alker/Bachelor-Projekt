@@ -54,12 +54,17 @@ def generate_parser(url, portal_name):
         You are a Senior Data Engineer. Your task is to write a BeautifulSoup4 parser script for fact-checking websites.
         The function must be named `parse_factcheck(html_content)` and must return a Python list of dictionaries (which represents a JSON array).
         Each dictionary in the list MUST contain exactly the following keys:
-        'headline', 'body', 'claim', 'author', 'published_at', and 'quoted_at' and 'original_rating'.
+        'headline', 'body' (the main text of the article), 'claim', 'author_factcheck', 'published_at', 'language',
+        'author_claim', 'stated_at' (when the claim was made) and 'original_rating' (the exact wording from the page).
         If a field does not exist or cannot be found in the HTML, set its value to `None`.
         If there are multiple claims in the HTML, add a new dictionary to the list for each claim.
-        CRITICAL DATE DEFINITIONS (The parser code must extract these accurately):
-        - `published_at`: The date when this specific fact-checking article was published.
-        - `quoted_at`: The date when the original claim was made or spoken.
+        CRITICAL DATE DEFINITIONS:
+        - 'published_at': The date when this specific fact-checking article was published or updated by the fact-checker. 
+        - 'stated_at': The date when the original claim was made, posted, or spoken by the person or entity being checked. 
+        This is usually an older date than published_at.
+        CRITICAL AUTHOR DEFINITIONS:
+        - 'author_factcheck': The author of the fact-checking article, sometime called fact-checker.
+        - 'author_claim': The author of the claim, usually a public figure.
         The generated Python code must attempt to format extracted dates as 'DD.MM.YYYY'.
         Do NOT use excessively complex regular expressions (`re.compile`) for class matching to avoid syntax errors; prefer standard string lists.
         Return EXCLUSIVELY the executable Python code. Do not include markdown formatting like ```python, explanations, or usage examples.
