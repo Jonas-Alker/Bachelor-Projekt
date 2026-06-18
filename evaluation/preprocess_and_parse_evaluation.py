@@ -49,15 +49,14 @@ def extraction_llm_directly(portal, html):
 
 def extraction_normal(portal, html):
     """
-    Forwards the method call for extraction. The HTML is  pre-processed but parsed using the generated parser scripts.
+    Forwards the method call for extraction. The HTML is parsed using the generated parser scripts.
 
     :param portal: name of portal
     :param html: HTML from which data is to be extracted
 
     :return: extraction data
     """
-    html_shortend = preprocessor_controller.preprocess(portal, html)
-    return parser_controller.parse(portal, html_shortend, False)
+    return parser_controller.parse(portal, html, False)
 
 def test_extraktion():
     """
