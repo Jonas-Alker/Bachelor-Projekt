@@ -1,0 +1,47 @@
+[
+   {
+     "portal_name": "politifact" ,
+     "portal_url": "politifact.com",
+     "factchecks": ["https://www.politifact.com/factchecks/2026/jun/15/josh-hokit/josh-hokit-ufc-white-house-michelle-obama/",
+                    "https://www.politifact.com/factchecks/2010/jul/06/daniel-senor/senor-inflates-japans-interest-payments/",
+                    "https://www.politifact.com/factchecks/2010/jul/06/andrew-napolitano/glenn-beck-host-says-obama-may-soon-be-able-shut-d/",
+                    "https://www.politifact.com/factchecks/2026/jun/08/social-media/california-voter-stuffing-ballots-AI-image/",
+                    "https://www.politifact.com/factchecks/2012/apr/30/barack-obama/obama-ad-says-mitt-romneys-view-killing-bin-laden/",
+                    "https://www.politifact.com/factchecks/2012/apr/30/pat-quinn/illinois-gov-pat-quinn-says-gov-scott-walkers-budg/",
+                    "https://www.politifact.com/factchecks/2025/jul/30/francesca-hong/es-about-a-quarter-of-every-dollar-spent-via-snap/",
+                    "https://www.politifact.com/factchecks/2023/aug/29/facebook-posts/false-rumors-about-gunshots-fired-at-a-south-carol/",
+                    "https://www.politifact.com/factchecks/2021/oct/29/facebook-posts/posts-about-virginia-voters-being-forced-sign-form/",
+                    "https://www.politifact.com/factchecks/2021/oct/28/randy-feenstra/biden-administration-predicted-liquid-fuel-cars-ou/"
+     ]
+  },
+     {
+     "portal_name": "fullfact" ,
+     "portal_url": "fullfact.org",
+     "factchecks": ["https://fullfact.org/politics/fake-ai-image-anti-reform-rally-wigan/",
+                    "https://fullfact.org/economy/uks-renewable-energy-target/",
+                    "https://fullfact.org/politics/labour-25-tax-rises/",
+                    "https://fullfact.org/politics/tulip-siddiq-25-tax-rises/",
+                    "https://fullfact.org/economy/fine-register-relationship-with-government-false/",
+                    "https://fullfact.org/election-2019/ask-fullfact-debt-deficit/",
+                    "https://fullfact.org/politics/keir-starmer-mandelson-mcsweeney-group-picture-not-real/",
+                    "https://fullfact.org/politics/kuenssberg-lowe-bbc-sunday-interview-fake/",
+                    "https://fullfact.org/politics/in-a-misinformation-age-we-need-to-know-what-the-fact-is-going-on/",
+                    "https://fullfact.org/election-2024/labour-manifesto/"
+     ]
+  },
+     {
+     "portal_name": "snopes" ,
+     "portal_url": "snopes.com",
+     "factchecks": ["https://www.snopes.com/fact-check/jelly-roll-divorce/",
+                    "https://www.snopes.com/fact-check/barbra-streisand-karoline-leavitt/",
+                    "https://www.snopes.com/fact-check/erika-kirk-druski-response/",
+                    "https://www.snopes.com/fact-check/trump-people-dont-work-quote/",
+                    "https://www.snopes.com/fact-check/kash-patel-bourbon-bottles/",
+                    "https://www.snopes.com/fact-check/trump-golf-miss-swing-video/",
+                    "https://www.snopes.com/fact-check/welchs-fruit-snacks-piece/",
+                    "https://www.snopes.com/fact-check/grocery-store-single-people/",
+                    "https://www.snopes.com/fact-check/glyphosatan/",
+                    "https://www.snopes.com/fact-check/steve-scalise-convention/"
+     ]
+  }
+]
