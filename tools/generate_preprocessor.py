@@ -74,9 +74,10 @@ def generate_preprocessor(url, portal_name):
             links, ads, sidebars and menus. 
             Remove them specifically using standard Python lists (e.g., `soup.find_all(['div', 'section', 'ul'],
             class_=['related-list', 'sidebar', 'read-more'])`).
-        2. NO CATCH-ALL LOOPS: 
-            Do NOT write generic loops that iterate over all 'div', 'p', 'span', or 'a' tags to check their positions.
-            Do not use structural checks like `if not element.find_parent()`.
+        2. NO STRING OR CATCH-ALL LOOPS: 
+            NEVER use `soup.find_all(string=...)` or `soup.find_all(text=...)`.
+            Do NOT iterate over all generic tags to check their positions. 
+            Searching by string returns Comment objects that break the pipeline.
         3. SAFE SEMANTIC TAGS:
             You may safely find and decompose global layout tags: `<nav>`, `<footer>`,
             `<aside>`, `<script>`, and `<style>`.
