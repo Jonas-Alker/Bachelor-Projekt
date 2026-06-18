@@ -63,29 +63,37 @@ def generate_preprocessor(url, portal_name):
         The function must be named `preprocess_factcheck(html_content)` and return ONLY the cleaned HTML as a string.
         
         YOUR EXACT MISSION:
-        Your only job is to reduce the size of the HTML by removing layout overhead and distracting sections.
-        You MUST specifically target and remove sections containing "Related Articles", "Read More", "Latest News", "Trending", "Other Fact Checks", or recommendation widgets.
-        Also remove navigation menus, footers, sidebars, cookie banners, and ads.
+        Reduce the HTML size by targeting ONLY specific noisy widgets: "Related Articles", "Read More", "Latest News",
+        "Trending", sidebars, cookie banners, donation prompts, and ads.
+        DO NOT try to clean up the CSS grid or the structural wrappers of the page!
         
 
        STRICT BLACKLISTING RULES (NO EXCEPTIONS):
-        1. TARGETED DECOMPOSE ONLY: Analyze the provided HTML and identify the specific `class` or `id` names used for related articles,
-           links, ads, sidebars, headers, and menus. 
-           Remove them specifically using standard Python lists (e.g., `soup.find_all(['div', 'section', 'ul'],
-           class_=['related-list', 'sidebar', 'read-more'])`).
-        2. NO CATCH-ALL LOOPS: Do NOT write generic loops that iterate over all 'div', 'p', 'span', or 'a' tags to check their positions.
-           Do not use structural checks like `if not element.find_parent()`.
-        3. SAFE SEMANTIC TAGS: You may safely find and decompose global layout tags: `<nav>`, `<header>`, `<footer>`,
-           `<aside>`, `<script>`, and `<style>`.
-        4. CRITICAL VOID TAG RULE: NEVER globally decompose or loop over void/empty tags like `<input>`, `<img>`,
-           `<meta>`, `<link>`, `<hr>`, or `<br>`. Only remove them if they happen to be inside a blacklisted layout container (like a footer or nav).
-           Decomposing them globally breaks the 'html.parser' tree hierarchy.
-        5. DEFENSIVE STRATEGY: If you are unsure whether a container belongs to the main content area or a related section,
-           LEAVE IT INTACT. It is perfectly fine if some minor noise survives, but it is fatal if parts of the core page are lost.
-        6. SAFEGUARDING GRIDS: NEVER blacklist generic CSS framework classes.
-           DO NOT include classes like 'container', 'row', 'col-', 'wrapper', 'main', or 'page' in your decompose lists.
-        7. SAFEGUARDING CONTENT: NEVER blacklist classes containing words like 'claim', 'body', 'conclusion', 'article', 'text', or 'cms-content'.
-        8. ABSOLUTELY NO EMPTY-TAG LOOPS: Do NOT write loops that search for and remove empty tags (e.g., `if not element.contents:`).
+        1. TARGETED DECOMPOSE ONLY: 
+            Analyze the provided HTML and identify the specific `class` or `id` names used for related articles,
+            links, ads, sidebars and menus. 
+            Remove them specifically using standard Python lists (e.g., `soup.find_all(['div', 'section', 'ul'],
+            class_=['related-list', 'sidebar', 'read-more'])`).
+        2. NO CATCH-ALL LOOPS: 
+            Do NOT write generic loops that iterate over all 'div', 'p', 'span', or 'a' tags to check their positions.
+            Do not use structural checks like `if not element.find_parent()`.
+        3. SAFE SEMANTIC TAGS:
+            You may safely find and decompose global layout tags: `<nav>`, `<footer>`,
+            `<aside>`, `<script>`, and `<style>`.
+        4. CRITICAL VOID TAG RULE:
+            NEVER globally decompose or loop over void/empty tags like `<input>`, `<img>`,
+            `<meta>`, `<link>`, `<hr>`, or `<br>`. Only remove them if they happen to be inside a blacklisted layout container (like a footer or nav).
+            Decomposing them globally breaks the 'html.parser' tree hierarchy.
+        5. DEFENSIVE STRATEGY:
+            If you are unsure whether a container belongs to the main content area or a related section,
+            LEAVE IT INTACT. It is perfectly fine if some minor noise survives, but it is fatal if parts of the core page are lost.
+        6. SAFEGUARDING GRIDS:
+            NEVER blacklist generic CSS framework classes.
+            DO NOT include classes like 'container', 'row', 'col-', 'wrapper', 'main', or 'page' in your decompose lists.
+        7. SAFEGUARDING CONTENT:
+            NEVER blacklist classes containing words like 'claim', 'body', 'conclusion', 'article', 'text', or 'cms-content'.
+        8. ABSOLUTELY NO EMPTY-TAG LOOPS:
+            Do NOT write loops that search for and remove empty tags (e.g., `if not element.contents:`).
 
         Return EXCLUSIVELY the executable Python code. Do not include markdown formatting like ```python, explanations, or usage examples.
         """
