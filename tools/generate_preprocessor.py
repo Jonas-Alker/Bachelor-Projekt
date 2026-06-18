@@ -61,31 +61,30 @@ def generate_preprocessor(url, portal_name):
         """
         You are a Senior Data Engineer. Your task is to write a BeautifulSoup4 preprocessor script for fact-checking websites.
         The function must be named `preprocess_factcheck(html_content)` and return ONLY the cleaned HTML as a string.
-        The preprocessor should take the full HTML and remove all sections that do not belong to the main article.
-        Remove all overhead such as navigation menus, footers, sidebars, related article links, and cookie banners.
-        CRITICAL INSTRUCTIONS FOR BEAUTIFULSOUP:
-        1. DO NOT extract elements to rebuild or construct a new HTML tree.
-        2. DO NOT create new tags (like a new wrapper div).
-        3. You must ONLY use the `.decompose()` or `.extract()` methods on unwanted elements (like navigation menus, footers, sidebars, cookie banners, related article links).
-        4. Leave the rest of the original HTML tree completely intact.
-        5. DO NOT use regular expressions (`re.compile`) for matching class names. If you need to match multiple classes, pass a standard Python list of strings (e.g., `class_=['class1', 'class2']`).
-        6. Target unwanted elements STRICTLY by identifying their specific `class`, `id`, or specific semantic tags (e.g., `<nav>`, `<footer>`, `<aside>`, `<script>`, `<style>`, `<iframe>`).
-        7. DO NOT use regular expressions (`re.compile`) for matching class names. Pass a standard Python list of strings (e.g., `class_=['class1', 'class2']`).
         
-        CRITICAL PRESERVATION RULE: 
-        You MUST ensure that the actual content is NEVER removed. 
-        If you are unsure if a div contains an ad or actual content, DO NOT decompose it.
-        The following must be preserved:
-        1. Headline
-        2. Main article text (body)
-        3. The claim being evaluated
-        4. Author of the article
-        5. Language of the article
-        6. Author of the claim
-        7. Publication date of the article
-        8. The date the original claim was made/quoted.
-        9. The original fact-check rating
+        YOUR EXACT MISSION:
+        Your only job is to reduce the size of the HTML by removing layout overhead and distracting sections.
+        You MUST specifically target and remove sections containing "Related Articles", "Read More", "Latest News", "Trending", "Other Fact Checks", or recommendation widgets.
+        Also remove navigation menus, footers, sidebars, cookie banners, and ads.
         
+
+       STRICT BLACKLISTING RULES (NO EXCEPTIONS):
+        1. TARGETED DECOMPOSE ONLY: Analyze the provided HTML and identify the specific `class` or `id` names used for related articles,
+          links, ads, sidebars, headers, and menus. 
+          Remove them specifically using standard Python lists (e.g., `soup.find_all(['div', 'section', 'ul'],
+          class_=['related-list', 'sidebar', 'read-more'])`).
+        2. NO CATCH-ALL LOOPS: Do NOT write generic loops that iterate over all 'div', 'p', 'span', or 'a' tags to check their positions.
+           Do not use structural checks like `if not element.find_parent()`.
+        3. SAFE SEMANTIC TAGS: You may safely find and decompose global layout tags: `<nav>`, `<header>`, `<footer>`,
+         `<aside>`, `<script>`, and `<style>`.
+        4. CRITICAL VOID TAG RULE: NEVER globally decompose or loop over void/empty tags like `<input>`, `<img>`,
+         `<meta>`, `<link>`, `<hr>`, or `<br>`. Only remove them if they happen to be inside a blacklisted layout container (like a footer or nav).
+          Decomposing them globally breaks the 'html.parser' tree hierarchy.
+        5. DEFENSIVE STRATEGY: If you are unsure whether a container belongs to the main content area or a related section,
+         LEAVE IT INTACT. It is perfectly fine if some minor noise survives, but it is fatal if parts of the core page are lost.
+        CRITICAL PRESERVATION RULE:
+        If you are unsure if a `div` contains a related article or the MAIN article/claim, LEAVE IT INTACT. The main headline, the claim being evaluated, the rating, and the main body text MUST survive.
+
         Return EXCLUSIVELY the executable Python code. Do not include markdown formatting like ```python, explanations, or usage examples.
         """
     )
