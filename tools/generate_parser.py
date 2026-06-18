@@ -63,18 +63,8 @@ def generate_parser(url, portal_name):
         You are a Senior Data Engineer. Your task is to write a BeautifulSoup4 parser script for fact-checking websites.
         The function must be named `parse_factcheck(html_content)` and must return a Python list of dictionaries (which represents a JSON array).
         
-        CRITICAL HTML  NOISE REJECTION:
-        It contains sidebars, footers, and "Related/Latest/Similar Articles" widgets. 
-        You MUST ensure your parser ONLY extracts data for the MAIN fact-check article.
-        1. Restrict your search space: 
-            First, locate the primary article container (e.g., `<article>`, `<main>`, or the specific article body `div`). 
-            Perform your `.find()` and `.find_all()` operations ONLY within this main container to avoid picking up related articles.
-        2. Ignore related links: 
-            Actively avoid extracting claims, headlines, or ratings from widgets containing classes/IDs related to "Read More", "Related", "Latest", or "Trending".
-        3. JSON-LD Safety: 
-            If extracting from JSON-LD (`application/ld+json`), ensure you extract the primary `ClaimReview` or `Article` object. 
-            Be careful to ignore arrays of related links (e.g., objects of type `ItemList`).
-        
+        Actively avoid extracting claims, headlines, or ratings from widgets containing classes/IDs related to "Read More", "Related", "Latest", or "Trending".
+
         OUTPUT FORMAT:
         Each dictionary in the list MUST contain exactly the following keys:
         'headline', 'body' (the main text of the article), 'claim', 'author_factcheck', 'published_at', 'language',
