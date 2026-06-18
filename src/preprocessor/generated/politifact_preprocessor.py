@@ -3,40 +3,53 @@ from bs4 import BeautifulSoup
 def preprocess_factcheck(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
 
-    # Remove global layout tags
-    for tag in soup(['nav', 'header', 'footer', 'aside', 'script', 'style']):
+    # Remove donation prompts
+    donation_containers = soup.find_all(['div', 'section'], class_=['m-disruptor-content', 'm-disruptor-form', 'm-supporter'])
+    for container in donation_containers:
+        container.decompose()
+
+    # Remove ads
+    ad_containers = soup.find_all(['div'], id=['TopLeaderboard', 'TopMedRect', 'MiddleRectangle', 'BottomLeaderboard'])
+    for container in ad_containers:
+        container.decompose()
+
+    # Remove cookie banner and related elements
+    cookie_banner = soup.find('div', class_='js-svg c-icon-defs')
+    if cookie_banner:
+        cookie_banner.decompose()
+
+    # Remove sharing widgets
+    sharing_widget = soup.find('div', class_='m-sharing')
+    if sharing_widget:
+        sharing_widget.decompose()
+
+    # Remove footer
+    footer = soup.find('footer', class_='t-footer')
+    if footer:
+        footer.decompose()
+
+    # Remove global scripts and styles
+    for tag in soup(['script', 'style']):
         tag.decompose()
 
-    # Remove specific layout containers
-    for tag in soup.find_all(['div', 'section', 'ul'], class_=['o-header__inner', 'o-header', 'o-disruptor', 'm-billboard', 'o-stagebox', 'o-listicle', 'm-supporter', 't-footer', 'm-sharing', 'lang-sub-nav']):
-        tag.decompose()
+    # Remove navigation elements
+    nav_elements = soup.find_all(['nav', 'header', 'aside'])
+    for element in nav_elements:
+        element.decompose()
 
-    # Remove ads and ad-related containers
-    for tag in soup.find_all(['div'], id=['TopLeaderboard', 'TopMedRect', 'MiddleRectangle', 'BottomLeaderboard', 'SmartNewsFeed']):
-        tag.decompose()
+    # Remove social media and newsletter sections
+    social_newsletter = soup.find_all(['div'], class_=['o-socializer', 'm-subscribe'])
+    for element in social_newsletter:
+        element.decompose()
 
-    # Remove cookie banners and donation prompts
-    for tag in soup.find_all(['div'], class_=['m-disruptor-content', 'm-disruptor-form']):
-        tag.decompose()
+    # Remove related articles and latest news sections
+    related_sections = soup.find_all(['section'], class_=['o-stagebox', 'o-listicle'])
+    for section in related_sections:
+        section.decompose()
 
-    # Remove related articles, read more, latest news, trending sections
-    for tag in soup.find_all(['div', 'section'], class_=['m-carousel', 'o-stagebox__content', 'o-listicle__more']):
-        tag.decompose()
-
-    # Remove social media sharing widgets
-    for tag in soup.find_all(['div'], class_=['m-sharing']):
-        tag.decompose()
-
-    # Remove newsletter signup forms
-    for tag in soup.find_all(['div'], class_=['m-subscribe', 'm-subscriber']):
-        tag.decompose()
-
-    # Remove footer widgets and social media sections
-    for tag in soup.find_all(['div'], class_=['o-socializer', 'm-widget']):
-        tag.decompose()
-
-    # Remove other recommendation widgets
-    for tag in soup.find_all(['div'], class_=['m-callout', 'm-flyer']):
-        tag.decompose()
+    # Remove trending and other sidebar content
+    sidebar_content = soup.find_all(['div'], class_=['m-callout', 'm-carousel', 'm-widget'])
+    for content in sidebar_content:
+        content.decompose()
 
     return str(soup)
