@@ -1,8 +1,17 @@
 [
   {
-    "_comment": "Examples of data, for setting up portals.json" ,
-    "name": "Exampleporatal (Name of the fact-checking portal)",
-    "url": "https://example.org/ (Domain of the fact-checking portal)",
-    "factcheck_example" : "https://example.org/factcheck/7878912 (Example of one factcheck) "
+    "name": "Politifact",
+    "url": "politifact.com",
+    "factcheck_example" : "https://www.politifact.com/factchecks/2026/may/14/kathy-castor/kid-care-florida-desantis-health-insurance/"
+  },
+  {
+    "name": "Fullfact",
+    "url": "fullfact.org",
+    "factcheck_example" : "https://fullfact.org/politics/fake-ai-image-anti-reform-rally-wigan/"
+  },
+  {
+    "name": "snopes",
+    "url": "snopes.com",
+    "factcheck_example" : "https://www.snopes.com/fact-check/trump-golf-miss-swing-video/"
   }
 ]
