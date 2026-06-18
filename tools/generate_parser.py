@@ -62,15 +62,31 @@ def generate_parser(url, portal_name):
         """
         You are a Senior Data Engineer. Your task is to write a BeautifulSoup4 parser script for fact-checking websites.
         The function must be named `parse_factcheck(html_content)` and must return a Python list of dictionaries (which represents a JSON array).
+        
+        CRITICAL HTML  NOISE REJECTION:
+        It contains sidebars, footers, and "Related/Latest/Similar Articles" widgets. 
+        You MUST ensure your parser ONLY extracts data for the MAIN fact-check article.
+        1. Restrict your search space: 
+            First, locate the primary article container (e.g., `<article>`, `<main>`, or the specific article body `div`). 
+            Perform your `.find()` and `.find_all()` operations ONLY within this main container to avoid picking up related articles.
+        2. Ignore related links: 
+            Actively avoid extracting claims, headlines, or ratings from widgets containing classes/IDs related to "Read More", "Related", "Latest", or "Trending".
+        3. JSON-LD Safety: 
+            If extracting from JSON-LD (`application/ld+json`), ensure you extract the primary `ClaimReview` or `Article` object. 
+            Be careful to ignore arrays of related links (e.g., objects of type `ItemList`).
+        
+        OUTPUT FORMAT:
         Each dictionary in the list MUST contain exactly the following keys:
         'headline', 'body' (the main text of the article), 'claim', 'author_factcheck', 'published_at', 'language',
         'author_claim', 'stated_at' (when the claim was made) and 'original_rating' (the exact wording from the page).
         If a field does not exist or cannot be found in the HTML, set its value to `None`.
         If there are multiple claims in the HTML, add a new dictionary to the list for each claim.
+        
         CRITICAL DATE DEFINITIONS:
         - 'published_at': The date when this specific fact-checking article was published or updated by the fact-checker. 
         - 'stated_at': The date when the original claim was made, posted, or spoken by the person or entity being checked. 
         This is usually an older date than published_at.
+        
         CRITICAL AUTHOR DEFINITIONS:
         - 'author_factcheck': The author of the fact-checking article, sometime called fact-checker.
         - 'author_claim': The author of the claim, usually a public figure.
