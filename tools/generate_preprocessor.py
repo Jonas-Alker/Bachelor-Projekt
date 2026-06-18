@@ -6,7 +6,7 @@ from pathlib import Path
 
 load_dotenv()
 
-# Konfiguration
+# Configuration
 API_KEY = os.getenv("KICONNECT_API_KEY")
 API_URL = "https://chat.kiconnect.nrw/api/v1/chat/completions"
 MODEL_ID = "MistralSmall_4"
@@ -14,10 +14,16 @@ MODEL_ID = "MistralSmall_4"
 if not API_KEY:
     print("Error: API_KEY is empty!")
 
-#Target
+# Target
 OUTPUT_DIR_PREPROCESSOR= Path(__file__).resolve().parent.parent / "src" / "preprocessor" / "generated"
 
 def load_html(url):
+    """
+    Downloads the HTML from the URL provided
+
+    :param url: url to download
+    :return: HTML content
+    """
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -28,7 +34,10 @@ def load_html(url):
         return None
 
 def load_few_shots():
-
+    """
+        Loads a few shot partial prompt, if any are stored in the file 'data/parser/few_shot_examples.json'.
+        :return: few shot partial prompt
+    """
     path = Path(__file__).resolve().parent.parent / "data" / "preprocessor" / "few_shot_examples.json"
     with open(path, "r", encoding="utf-8") as f:
         examples = json.load(f)
@@ -102,10 +111,3 @@ def generate_preprocessor(url, portal_name):
 
     except Exception as e:
         print(f"Error with the AI request: {e}")
-
-#For testing purposes only during programming
-if __name__ == "__main__":
-    test_url = "https://www.politifact.com/factchecks/2026/may/14/kathy-castor/kid-care-florida-desantis-health-insurance/"
-    portal_name = "Politifacti"
-
-    generate_preprocessor(test_url, portal_name)
