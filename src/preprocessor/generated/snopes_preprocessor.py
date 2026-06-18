@@ -14,93 +14,69 @@ def preprocess_factcheck(html_content):
         footer.decompose()
 
     # Remove sidebars and ads
-    right_column = soup.find('div', class_='right-column')
-    if right_column:
-        right_column.decompose()
-
-    # Remove cookie banners
-    newsletter_banner = soup.find('div', id='newsletter-login-banner')
-    if newsletter_banner:
-        newsletter_banner.decompose()
-
-    promo_banner = soup.find('div', class_='newsletter-login-banner')
-    if promo_banner:
-        promo_banner.decompose()
-
-    promo_1440_banner = soup.find('div', id='promo-1440-banner')
-    if promo_1440_banner:
-        promo_1440_banner.decompose()
-
-    footer_promo_banner = soup.find('div', id='footer-outer-promo-banner')
-    if footer_promo_banner:
-        footer_promo_banner.decompose()
-
-    # Remove "Related Articles" sections
-    read_more = soup.find('div', id='read_more')
-    if read_more:
-        read_more.decompose()
-
-    # Remove "Read More" sections
-    read_more_articles = soup.find('div', id='read_more_articles_wrapper')
-    if read_more_articles:
-        read_more_articles.decompose()
-
-    # Remove "Latest News" sections
-    latest_news = soup.find('div', class_='latest_news_wrapper')
-    if latest_news:
-        latest_news.decompose()
-
-    # Remove "Trending" sections
-    trending = soup.find('div', class_='trending_wrapper')
-    if trending:
-        trending.decompose()
-
-    # Remove "Other Fact Checks" sections
-    other_fact_checks = soup.find('div', class_='other_fact_checks_wrapper')
-    if other_fact_checks:
-        other_fact_checks.decompose()
-
-    # Remove recommendation widgets
-    recommendations = soup.find('div', class_='recommendations_wrapper')
-    if recommendations:
-        recommendations.decompose()
-
-    # Remove navigation filler
-    nav_filler = soup.find('div', id='nav_filler')
-    if nav_filler:
-        nav_filler.decompose()
+    sidebar = soup.find('div', class_='right-column')
+    if sidebar:
+        sidebar.decompose()
 
     # Remove sticky ads
     sticky_ad = soup.find('div', class_='sticky-cont')
     if sticky_ad:
         sticky_ad.decompose()
 
+    # Remove "Recommendations" section
+    recommendations = soup.find('div', id='read_more')
+    if recommendations:
+        recommendations.decompose()
+
+    # Remove "Article Tags" section
+    tags_section = soup.find('div', id='tag_section')
+    if tags_section:
+        tags_section.decompose()
+
+    # Remove social media sharing buttons
+    social_buttons = soup.find('div', class_='social_comments_app_wrapper')
+    if social_buttons:
+        social_buttons.decompose()
+
+    # Remove "Sources" section
+    sources = soup.find('div', class_='sources_wrapper')
+    if sources:
+        sources.decompose()
+
+    # Remove "Updates" section
+    updates = soup.find('div', class_='updates_wrapper')
+    if updates:
+        updates.decompose()
+
+    # Remove "Article Tags" section
+    article_tags = soup.find('div', id='tag_section')
+    if article_tags:
+        article_tags.decompose()
+
+    # Remove "Related Articles" section
+    related_articles = soup.find('div', class_='outer-ad-unit-wrapper')
+    if related_articles:
+        related_articles.decompose()
+
+    # Remove cookie banners
+    cookie_banner = soup.find('div', class_='newsletter-login-banner')
+    if cookie_banner:
+        cookie_banner.decompose()
+
+    # Remove promotional banners
+    promo_banners = soup.find_all(['div', 'aside'], class_=lambda x: x and ('promo-' in x or 'sponsor-1440' in x))
+    for banner in promo_banners:
+        banner.decompose()
+
     # Remove script tags
-    for script in soup.find_all('script'):
+    scripts = soup.find_all('script')
+    for script in scripts:
         script.decompose()
 
     # Remove style tags
-    for style in soup.find_all('style'):
+    styles = soup.find_all('style')
+    for style in styles:
         style.decompose()
 
-    # Remove input tags
-    for input_tag in soup.find_all('input'):
-        input_tag.decompose()
-
-    # Remove meta tags
-    for meta in soup.find_all('meta'):
-        meta.decompose()
-
-    # Remove link tags
-    for link in soup.find_all('link'):
-        link.decompose()
-
-    # Remove hr tags
-    for hr in soup.find_all('hr'):
-        hr.decompose()
-
-    # Remove br tags
-    for br in soup.find_all('br'):
-        br.decompose()
-
+    # Return the cleaned HTML as a string
     return str(soup)
