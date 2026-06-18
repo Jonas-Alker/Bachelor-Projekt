@@ -4,80 +4,82 @@ from datetime import datetime
 
 def parse_factcheck(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Find the main article container
-    main_article = soup.find('article', class_='m-textblock')
-    if not main_article:
-        return []
-
-    # Initialize result list
     results = []
 
-    # Extract language from html lang attribute
-    language = soup.find('html').get('lang', None)
+    # Extract language
+    language = 'en'
+    lang_element = soup.find('html', {'lang': True})
+    if lang_element and 'lang' in lang_element.attrs:
+        language = lang_element['lang'].split('-')[0]
 
-    # Extract headline
-    headline_elem = main_article.find_previous('h1', class_='c-title')
-    headline = headline_elem.get_text(strip=True) if headline_elem else None
+    # Extract main fact-check article
+    article = soup.find('article', class_=re.compile(r'm-statement--is-\w+'))
+    if not article:
+        return results
 
-    # Extract body text
-    body = main_article.get_text(separator='\n', strip=True)
+    # Extract claim and author_claim
+    claim_element = article.find('div', class_='m-statement__quote')
+    claim = claim_element.get_text(strip=True) if claim_element else None
 
-    # Extract claim from statement block
-    claim_elem = main_article.find('div', class_='m-statement__quote')
-    claim = claim_elem.get_text(strip=True) if claim_elem else None
+    # Extract author_claim
+    author_claim_element = article.find('a', class_='m-statement__name')
+    author_claim = author_claim_element.get_text(strip=True) if author_claim_element else None
 
-    # Extract author_factcheck
-    author_factcheck_elem = main_article.find_previous('div', class_='m-author')
-    author_factcheck = None
-    published_at = None
-    if author_factcheck_elem:
-        author_factcheck = author_factcheck_elem.find('a').get_text(strip=True) if author_factcheck_elem.find('a') else None
-        date_text = author_factcheck_elem.find('span', class_='m-author__date').get_text(strip=True) if author_factcheck_elem.find('span', class_='m-author__date') else None
-        if date_text:
-            try:
-                # Parse date in format like "May 14, 2026"
-                date_obj = datetime.strptime(date_text, '%B %d, %Y')
-                published_at = date_obj.strftime('%d.%m.%Y')
-            except ValueError:
-                published_at = None
-
-    # Extract author_claim from statement block
-    author_claim_elem = main_article.find('a', class_='m-statement__name')
-    author_claim = author_claim_elem.get_text(strip=True) if author_claim_elem else None
-
-    # Extract stated_at from statement block
-    stated_at_elem = main_article.find('div', class_='m-statement__desc')
+    # Extract stated_at
+    stated_at_element = article.find('div', class_='m-statement__desc')
     stated_at = None
-    if stated_at_elem:
-        stated_at_text = stated_at_elem.get_text(strip=True)
-        # Extract date from text like "stated on April 29, 2026 in an X post"
-        date_match = re.search(r'(\w+ \d{1,2}, \d{4})', stated_at_text)
+    if stated_at_element:
+        stated_at_text = stated_at_element.get_text(strip=True)
+        date_match = re.search(r'stated on (\w+ \d{1,2}, \d{4})', stated_at_text)
         if date_match:
             try:
-                date_obj = datetime.strptime(date_match.group(1), '%B %d, %Y')
-                stated_at = date_obj.strftime('%d.%m.%Y')
-            except ValueError:
-                stated_at = None
+                stated_at = datetime.strptime(date_match.group(1), '%B %d, %Y').strftime('%d.%m.%Y')
+            except:
+                pass
 
-    # Extract original_rating from meter image alt text
-    rating_elem = main_article.find('img', alt=True)
-    original_rating = rating_elem['alt'] if rating_elem and 'alt' in rating_elem.attrs else None
+    # Extract original_rating
+    rating_element = article.find('img', alt=True)
+    original_rating = rating_element['alt'] if rating_element and 'alt' in rating_element.attrs else None
+
+    # Extract author_factcheck
+    author_factcheck_element = soup.find('a', href=re.compile(r'/staff/'))
+    author_factcheck = author_factcheck_element.get_text(strip=True) if author_factcheck_element else None
+
+    # Extract published_at
+    published_at_element = soup.find('span', class_='m-author__date')
+    published_at = None
+    if published_at_element:
+        date_text = published_at_element.get_text(strip=True)
+        try:
+            published_at = datetime.strptime(date_text, '%B %d, %Y').strftime('%d.%m.%Y')
+        except:
+            pass
+
+    # Extract headline
+    headline_element = soup.find('h1', class_=re.compile(r'c-title--\w+'))
+    headline = headline_element.get_text(strip=True) if headline_element else None
+
+    # Extract body
+    body_element = soup.find('article', class_='m-textblock')
+    body = None
+    if body_element:
+        for unwanted in body_element.find_all(['div', 'section'], class_=re.compile(r'm-(callout|author|superbox)')):
+            unwanted.decompose()
+        body = body_element.get_text(strip=True)
 
     # Create result dictionary
-    result = {
-        'headline': headline,
-        'body': body,
-        'claim': claim,
-        'author_factcheck': author_factcheck,
-        'published_at': published_at,
-        'language': language,
-        'author_claim': author_claim,
-        'stated_at': stated_at,
-        'original_rating': original_rating
-    }
-
-    # Add to results list
-    results.append(result)
+    if claim or headline:
+        result = {
+            'headline': headline,
+            'body': body,
+            'claim': claim,
+            'author_factcheck': author_factcheck,
+            'published_at': published_at,
+            'language': language,
+            'author_claim': author_claim,
+            'stated_at': stated_at,
+            'original_rating': original_rating
+        }
+        results.append(result)
 
     return results
