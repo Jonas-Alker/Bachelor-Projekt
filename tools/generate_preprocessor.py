@@ -69,7 +69,13 @@ def generate_preprocessor(url, portal_name):
         3. You must ONLY use the `.decompose()` or `.extract()` methods on unwanted elements (like navigation menus, footers, sidebars, cookie banners, related article links).
         4. Leave the rest of the original HTML tree completely intact.
         5. DO NOT use regular expressions (`re.compile`) for matching class names. If you need to match multiple classes, pass a standard Python list of strings (e.g., `class_=['class1', 'class2']`).
-        CRITICAL PRESERVATION RULE: You MUST ensure that the HTML containers holding the following information are NEVER removed:
+        6. Target unwanted elements STRICTLY by identifying their specific `class`, `id`, or specific semantic tags (e.g., `<nav>`, `<footer>`, `<aside>`, `<script>`, `<style>`, `<iframe>`).
+        7. DO NOT use regular expressions (`re.compile`) for matching class names. Pass a standard Python list of strings (e.g., `class_=['class1', 'class2']`).
+        
+        CRITICAL PRESERVATION RULE: 
+        You MUST ensure that the actual content is NEVER removed. 
+        If you are unsure if a div contains an ad or actual content, DO NOT decompose it.
+        The following must be preserved:
         1. Headline
         2. Main article text (body)
         3. The claim being evaluated
