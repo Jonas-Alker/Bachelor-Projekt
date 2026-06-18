@@ -3,6 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import requests
 import os
+import json_repair
 
 load_dotenv()
 
@@ -13,7 +14,12 @@ MODEL_ID = "MistralSmall_4"
 
 if not API_KEY:
     print("Error: API_KEY is empty!")
-def load_few_shots():
+
+def load_few_shot():
+    """
+    Loads a few shot partial prompt, if any are stored in the file 'data/parser/few_shot_examples.json'.
+    :return: few shot partial prompt
+    """
     path = Path(__file__).resolve().parent.parent.parent / "data" / "parser" / "few_shot_examples.json"
     with open(path, "r", encoding="utf-8") as f:
         examples = json.load(f)
@@ -27,6 +33,12 @@ def load_few_shots():
 
 
 def parse_factcheck(html_content):
+    """
+    Extracts all the fields being searched for from the provided HTML (fact-check). In order to do this, the KIConnect API interface is used.
+
+    :param html_content: HTML of fact-check, which is to be searched
+    :return: JSON containing all the fields searched for (see the detailed JSON schema below)
+    """
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {API_KEY}"
@@ -51,12 +63,12 @@ def parse_factcheck(html_content):
         """
     )
     messages = [{"role": "system", "content": system_prompt}]
-    messages.extend(load_few_shots())
+    messages.extend(load_few_shot())
     messages.append({
         "role": "user",
         "content": f"Analyse the HTML document and extract the data in accordance with the defined schema:\n\n{html_content}"})
 
-    #Detailed JSON Schema
+    #Detailed JSON schema
     json_schema = {
         "name": "fact_check",
         "schema": {
@@ -98,19 +110,9 @@ def parse_factcheck(html_content):
         reply = requests.post(API_URL, headers=headers, json=data)
         reply.raise_for_status()
 
-        reply_json = reply.json()["choices"][0]["message"]["content"]
-        reply_json = reply_json.replace("```json", "").replace("```", "").strip()
-        return reply_json
+        reply_json_string = reply.json()["choices"][0]["message"]["content"]
+        reply_json_string = reply_json_string.replace("```json", "").replace("```", "").strip()
+        parsed_data = json_repair.loads(reply_json_string)
+        return parsed_data
     except Exception as e:
         print(f"Error with the AI request: {e}")
-
-
-#For testing purposes only during programming
-if __name__ == "__main__":
-    test_url = "https://www.politifact.com/factchecks/2026/jun/10/graham-platner/Susan-Collins-Trump-vote-Maine-senate-election/"
-
-    response = requests.get(test_url)
-    r = response.text
-    response.raise_for_status()
-
-    parse_factcheck(r)
