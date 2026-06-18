@@ -1,20 +1,18 @@
 from src.crawler.sitemap_crawler import search_sitemap_by_url
 from src.crawler.url_filter import filter_url, load_rules
 from evaluation.claimskg_client import get_urls_from_claimskg
-from src.storage.db_manager import DBManager
-
+from src.storage.html_cache_manager import HTMLCacheManager
 def test_ClaimsKG_comparision():
-    """Manual test to check whether URLs from Claims KG match those from the scraper. The output consists of two files,
+    """
+    Manual test to check whether URLs from Claims KG match those from the scraper. The output consists of two files,
     links that are only in Claims KG but not in the scraper results, and vice versa (tests/test_data/raw).
-
-    :return:
     """
     portal = "Politifact"
     url = "https://www.politifact.com/"
     test_db_path = "tests/test_data/raw"
 
     #Crawl
-    manager_raw = DBManager(version="test_ClaimsKg", mode="create", base_path=test_db_path)
+    manager_raw = HTMLCacheManager(version="test_ClaimsKg", mode="create", base_path=test_db_path)
     search_sitemap_by_url(portal, url, manager_raw)
 
     #Get Data
@@ -41,14 +39,15 @@ def test_ClaimsKG_comparision():
 
 
 def test_clean_db():
-    """To re-filter the test database that had already been crawled,
+    """
+    To re-filter the test database that had already been crawled,
     if the filter had to be adjusted
     """
     portal = "Politifact"
     test_db_path = "tests/test_data/raw"
     test_source_path = "tests/test_data/raw/factencheck_test_ClaimsKg.db"
 
-    manager = DBManager(version="test_ClaimsKg", mode="load", base_path=test_db_path, source_path = test_source_path)
+    manager = HTMLCacheManager(version="test_ClaimsKg", mode="load", base_path=test_db_path, source_path = test_source_path)
     urls = manager.get_urls_by_portal(portal)
 
     include, exclude = load_rules(portal)
