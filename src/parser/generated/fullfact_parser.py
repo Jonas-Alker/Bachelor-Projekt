@@ -5,30 +5,31 @@ from datetime import datetime
 def parse_factcheck(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     
-    # Locate the primary article container
+    # Find the main article container
     main_container = soup.find('main', class_='fact-check')
     if not main_container:
         main_container = soup.find('article')
+    if not main_container:
+        main_container = soup.find('div', class_='container')
     
     if not main_container:
         return []
     
-    # Initialize result list
     results = []
     
-    # Extract JSON-LD data
-    ld_scripts = main_container.find_all('script', type='application/ld+json')
+    # Parse JSON-LD data
+    json_ld_scripts = main_container.find_all('script', type='application/ld+json')
     claim_review_data = None
     article_data = None
     
-    for script in ld_scripts:
+    for script in json_ld_scripts:
         try:
             data = json.loads(script.string)
             if isinstance(data, list):
                 for item in data:
-                    if item.get('@type') == 'ClaimReview':
+                    if isinstance(item, dict) and item.get('@type') == 'ClaimReview':
                         claim_review_data = item
-                    elif item.get('@type') == 'Article':
+                    elif isinstance(item, dict) and item.get('@type') == 'Article':
                         article_data = item
             elif isinstance(data, dict):
                 if data.get('@type') == 'ClaimReview':
@@ -38,80 +39,79 @@ def parse_factcheck(html_content):
         except (json.JSONDecodeError, AttributeError):
             continue
     
-    # Extract headline
-    headline = None
-    if article_data and 'headline' in article_data:
-        headline = article_data['headline']
-    
-    # Extract body text
-    body = ''
-    body_div = main_container.find('div', class_='cms-content')
-    if body_div:
-        for p in body_div.find_all('p', recursive=True):
-            if p.get('data-nosnippet') is None:
-                body += p.get_text(strip=True) + ' '
-    
-    # Extract claim
+    # Extract data from ClaimReview
     claim = None
-    if claim_review_data and 'claimReviewed' in claim_review_data:
-        claim = claim_review_data['claimReviewed']
+    original_rating = None
+    stated_at = None
+    author_claim = None
     
-    # Extract author_factcheck
-    author_factcheck = None
-    if claim_review_data and 'author' in claim_review_data and isinstance(claim_review_data['author'], dict):
-        author_factcheck = claim_review_data['author'].get('name')
-    elif article_data and 'author' in article_data:
-        authors = article_data['author']
-        if isinstance(authors, list):
-            author_factcheck = ', '.join([a.get('name', '') for a in authors if 'name' in a])
-        elif isinstance(authors, dict):
-            author_factcheck = authors.get('name')
+    if claim_review_data:
+        claim = claim_review_data.get('claimReviewed')
+        review_rating = claim_review_data.get('reviewRating', {})
+        original_rating = review_rating.get('alternateName')
+        date_published = claim_review_data.get('datePublished')
+        if date_published:
+            try:
+                stated_at = datetime.strptime(date_published, '%Y-%m-%d').strftime('%d.%m.%Y')
+            except ValueError:
+                try:
+                    stated_at = datetime.strptime(date_published.split('T')[0], '%Y-%m-%d').strftime('%d.%m.%Y')
+                except ValueError:
+                    stated_at = None
     
-    # Extract published_at
+    # Extract data from Article
+    headline = None
     published_at = None
-    if article_data and 'datePublished' in article_data:
-        date_str = article_data['datePublished']
-        try:
-            if 'T' in date_str:
-                dt = datetime.fromisoformat(date_str)
-            else:
-                dt = datetime.strptime(date_str, '%Y-%m-%d')
-            published_at = dt.strftime('%d.%m.%Y')
-        except (ValueError, TypeError):
-            pass
-    
-    # Extract language
+    author_factcheck = None
     language = 'en'
     
-    # Extract author_claim
-    author_claim = None
-    if claim_review_data and 'claimReviewed' in claim_review_data:
-        # Try to extract from claim text if it contains the author
-        claim_text = claim_review_data['claimReviewed']
-        if 'by' in claim_text.lower():
-            parts = claim_text.split('by')
-            if len(parts) > 1:
-                author_claim = parts[-1].strip()
+    if article_data:
+        headline = article_data.get('headline')
+        date_published = article_data.get('datePublished')
+        if date_published:
+            try:
+                published_at = datetime.strptime(date_published.split('T')[0], '%Y-%m-%d').strftime('%d.%m.%Y')
+            except ValueError:
+                try:
+                    published_at = datetime.strptime(date_published, '%Y-%m-%d').strftime('%d.%m.%Y')
+                except ValueError:
+                    published_at = None
+        
+        author = article_data.get('author', [])
+        if author and isinstance(author, list):
+            for a in author:
+                if isinstance(a, dict) and a.get('@type') == 'Person':
+                    author_factcheck = a.get('name')
     
-    # Extract stated_at
-    stated_at = None
-    if claim_review_data and 'datePublished' in claim_review_data:
-        date_str = claim_review_data['datePublished']
-        try:
-            if 'T' in date_str:
-                dt = datetime.fromisoformat(date_str)
-            else:
-                dt = datetime.strptime(date_str, '%Y-%m-%d')
-            stated_at = dt.strftime('%d.%m.%Y')
-        except (ValueError, TypeError):
-            pass
+    # Extract body text from the main article
+    body = ''
+    article_body = main_container.find('div', class_='cms-content')
+    if article_body:
+        for p in article_body.find_all('p', recursive=False):
+            if p.get('data-block-key') or p.find_parent('div', class_='block-rich_text'):
+                body += p.get_text(strip=True) + ' '
     
-    # Extract original_rating
-    original_rating = None
-    if claim_review_data and 'reviewRating' in claim_review_data:
-        rating = claim_review_data['reviewRating']
-        if isinstance(rating, dict):
-            original_rating = rating.get('alternateName')
+    # Extract claim from the claim card
+    claim_card = main_container.find('div', class_='card-claim-body')
+    if claim_card:
+        claim_text = claim_card.find('p', class_='card-text')
+        if claim_text:
+            claim = claim_text.get_text(strip=True)
+    
+    # Extract original rating from the conclusion card
+    conclusion_card = main_container.find('div', class_='card-conclusion-body')
+    if conclusion_card:
+        original_rating = conclusion_card.find('p', class_='card-text')
+        if original_rating:
+            original_rating = original_rating.get_text(strip=True)
+    
+    # Extract author from the citation section
+    citation = main_container.find('cite', class_='citation')
+    if not citation:
+        citation = main_container.find('a', href=lambda x: x and '/authors/' in x)
+    
+    if citation:
+        author_factcheck = citation.get_text(strip=True)
     
     # Create result dictionary
     result = {
@@ -121,7 +121,7 @@ def parse_factcheck(html_content):
         'author_factcheck': author_factcheck,
         'published_at': published_at,
         'language': language,
-        'author_claim': author_claim,
+        'author_claim': None,
         'stated_at': stated_at,
         'original_rating': original_rating
     }
