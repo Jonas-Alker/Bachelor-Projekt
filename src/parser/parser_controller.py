@@ -8,8 +8,9 @@ GENERATED_DIR = Path(__file__).resolve().parent / "generated"
 
 def get_existing_parsers():
     """
-    Returns the portals for which a preprocessor has already been generated
-    :return: list of Portals
+    Returns the portals for which a preprocessor has already been generated.
+
+    :return: list of portals
     """
     parsers = []
 
@@ -26,10 +27,14 @@ def get_existing_parsers():
 
 def parse(portal_name, html,llm_based=False):
     """
+    If available, forwards the method call to the relevant parser of the portal after it has been dynamically loaded.
+    In the case of LLM extraction (llm_based = True), this is forwarded to the LLM.
 
-    :param portal_name:
-    :param html:
-    :return:
+    :param portal_name: name of the portal
+    :param html: HTML of the fact check to be searched
+    :param llm_based: Indicator for LLM extraction
+
+    :return:extraction results
     """
     if llm_based:
         return llm_parser.parse_factcheck(html)

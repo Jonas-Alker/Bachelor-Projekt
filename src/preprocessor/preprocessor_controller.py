@@ -7,8 +7,9 @@ GENERATED_DIR = Path(__file__).resolve().parent / "generated"
 
 def get_existing_preprocessors():
     """
-    Returns the portals for which a parser has already been generated
-    :return: list of Portals
+    Returns the portals for which a parser has already been generated.
+
+    :return: list of portals
     """
     preprocessors = []
 
@@ -23,6 +24,14 @@ def get_existing_preprocessors():
     return preprocessors
 
 def preprocess(portal_name, html):
+    """
+    If available, forwards the method call to the relevant preprocessor of the portal after it has been dynamically loaded.
+
+    :param portal_name: name of the portal
+    :param html: HTML of the fact check to be preprocessed
+
+    :return:preprocess results
+    """
     file_path = GENERATED_DIR / f"{portal_name.lower()}_preprocessor.py"
     if not file_path.exists():
         raise FileNotFoundError(f"Preprocessor for {portal_name.lower()} does not exist")
