@@ -1,81 +1,99 @@
 from bs4 import BeautifulSoup
-from datetime import datetime
 import re
+from datetime import datetime
 
 def parse_factcheck(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Find the main article container
+    main_article = soup.find('article', class_='m-textblock')
+    if not main_article:
+        return []
+
+    # Initialize result list
     results = []
 
-    # Find all statement articles
-    statement_articles = soup.find_all('article', class_=lambda x: x and 'm-statement' in x.split())
+    # Extract language from html lang attribute
+    language = soup.find('html').get('lang', None)
 
-    for article in statement_articles:
-        # Extract claim and claim author
-        claim_author_tag = article.find('a', class_='m-statement__name')
-        claim_author = claim_author_tag.get_text(strip=True) if claim_author_tag else None
+    # Extract author_factcheck and published_at from the author section
+    author_section = soup.find('div', class_='m-author')
+    author_factcheck = None
+    published_at = None
+    if author_section:
+        author_link = author_section.find('a')
+        if author_link:
+            author_factcheck = author_link.get_text(strip=True)
+        date_span = author_section.find('span', class_='m-author__date')
+        if date_span:
+            published_at_str = date_span.get_text(strip=True)
+            try:
+                # Parse date string like "May 14, 2026"
+                published_at = datetime.strptime(published_at_str, '%B %d, %Y').strftime('%d.%m.%Y')
+            except ValueError:
+                pass
 
-        claim_text_tag = article.find('div', class_='m-statement__quote')
-        claim = claim_text_tag.get_text(strip=True) if claim_text_tag else None
+    # Extract headline from h1
+    headline = None
+    h1 = soup.find('h1', class_='c-title')
+    if h1:
+        headline = h1.get_text(strip=True)
 
-        # Extract stated_at date
-        stated_at_tag = article.find('div', class_='m-statement__desc')
-        stated_at = None
-        if stated_at_tag:
-            stated_at_text = stated_at_tag.get_text(strip=True)
-            # Extract date from text like "stated on April 29, 2026 in an X post"
-            date_match = re.search(r'stated on (\w+ \d{1,2},? \d{4})', stated_at_text)
-            if date_match:
-                try:
-                    stated_at = datetime.strptime(date_match.group(1), '%B %d, %Y').strftime('%d.%m.%Y')
-                except ValueError:
-                    pass
+    # Extract body text from the main article
+    body = None
+    if main_article:
+        body = main_article.get_text(separator='\n', strip=True)
 
-        # Extract original rating
-        rating_img = article.find('img', alt=lambda x: x and x in ['true', 'mostly-true', 'half-true', 'mostly-false', 'false', 'pants-fire'])
-        original_rating = rating_img['alt'] if rating_img else None
+    # Extract claim from the statement section
+    claim = None
+    statement_section = soup.find('article', class_='m-statement')
+    if statement_section:
+        claim_quote = statement_section.find('div', class_='m-statement__quote')
+        if claim_quote:
+            claim = claim_quote.get_text(strip=True)
 
-        # Extract headline from title or h1
-        headline_tag = soup.find('h1', class_='c-title')
-        headline = headline_tag.get_text(strip=True) if headline_tag else None
+    # Extract author_claim and stated_at from the statement section
+    author_claim = None
+    stated_at = None
+    if statement_section:
+        author_meta = statement_section.find('div', class_='m-statement__meta')
+        if author_meta:
+            author_link = author_meta.find('a', class_='m-statement__name')
+            if author_link:
+                author_claim = author_link.get_text(strip=True)
+            desc = author_meta.find('div', class_='m-statement__desc')
+            if desc:
+                stated_at_str = desc.get_text(strip=True)
+                # Extract date from "stated on April 29, 2026 in an X post"
+                date_match = re.search(r'(\w+ \d{1,2}, \d{4})', stated_at_str)
+                if date_match:
+                    try:
+                        stated_at = datetime.strptime(date_match.group(1), '%B %d, %Y').strftime('%d.%m.%Y')
+                    except ValueError:
+                        pass
 
-        # Extract body text
-        body_tag = soup.find('article', class_='m-textblock')
-        body = None
-        if body_tag:
-            body = body_tag.get_text(strip=True)
+    # Extract original_rating from the meter section
+    original_rating = None
+    meter_section = statement_section.find('div', class_='m-statement__meter')
+    if meter_section:
+        img = meter_section.find('img')
+        if img and 'alt' in img.attrs:
+            original_rating = img['alt']
 
-        # Extract author_factcheck
-        author_tag = soup.find('a', href=lambda x: x and '/staff/' in x)
-        author_factcheck = author_tag.get_text(strip=True) if author_tag else None
+    # Create the result dictionary
+    result = {
+        'headline': headline,
+        'body': body,
+        'claim': claim,
+        'author_factcheck': author_factcheck,
+        'published_at': published_at,
+        'language': language,
+        'author_claim': author_claim,
+        'stated_at': stated_at,
+        'original_rating': original_rating
+    }
 
-        # Extract published_at
-        date_tag = soup.find('span', class_='m-author__date')
-        published_at = None
-        if date_tag:
-            date_text = date_tag.get_text(strip=True)
-            # Extract date from text like "May 14, 2026"
-            date_match = re.search(r'(\w+ \d{1,2}, \d{4})', date_text)
-            if date_match:
-                try:
-                    published_at = datetime.strptime(date_match.group(1), '%B %d, %Y').strftime('%d.%m.%Y')
-                except ValueError:
-                    pass
-
-        # Language is always English for this site
-        language = 'en'
-
-        # Create result dictionary
-        result = {
-            'headline': headline,
-            'body': body,
-            'claim': claim,
-            'author_factcheck': author_factcheck,
-            'published_at': published_at,
-            'language': language,
-            'author_claim': claim_author,
-            'stated_at': stated_at,
-            'original_rating': original_rating
-        }
-        results.append(result)
+    # Add to results list
+    results.append(result)
 
     return results
