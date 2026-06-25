@@ -3,12 +3,20 @@ import os
 from src.crawler.sitemap_crawler import search_sitemap_by_url
 import src.storage.html_cache_manager as html_cache_manager
 from src.storage.fact_check_manager import FactCheckManager
+import logging
+import logging.config
+from logging_config import LOGGING_SETUP
+
+#Load logging Config:
+logging.config.dictConfig(LOGGING_SETUP)
+logger = logging.getLogger(__name__)
 
 CONFIG_PORTALS = "config/portals.json"
 LLM_BASED = False
 
 def read_portals_config():
     if not os.path.exists(CONFIG_PORTALS):
+        logger.critical(f"Error: {CONFIG_PORTALS} does not exist")
         raise(f"Error: {CONFIG_PORTALS} does not exist")
 
     with open(CONFIG_PORTALS, "r", encoding="utf-8") as f:
