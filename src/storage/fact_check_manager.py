@@ -3,6 +3,10 @@ import sqlite3
 import os
 import shutil
 import pandas as pd
+import logging
+
+#Getting Logger
+logger = logging.getLogger(__name__)
 
 class FactCheckManager:
     def __init__(self, version= "v1", mode="create", base_path="data/", source_path = None):
@@ -23,12 +27,15 @@ class FactCheckManager:
 
         if mode == "load":
             if not os.path.exists(self.db_path):
+                logger.critical(f"Version {version} of db file not found: {self.db_path}")
                 raise FileNotFoundError(f"Version {version} of db file not found: {self.db_path}")
 
         elif mode == "copy":
             if not source_path:
+                logger.critical("source_path must be provided when mode is 'copy'")
                 raise ValueError("source_path must be provided when mode is 'copy'")
             if not os.path.exists(source_path):
+                logger.critical(f"Source database file not found: {source_path}")
                 raise FileNotFoundError(f"Source database file not found: {source_path}")
             if not os.path.exists(base_path):
                 os.makedirs(base_path)
@@ -74,7 +81,7 @@ class FactCheckManager:
                 CREATE TABLE IF NOT EXISTS portals
                 (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name        TEXT UNIQUE,
+                    portal_name TEXT UNIQUE,
                     portal_url  TEXT UNIQUE
                 )""")
 
@@ -86,9 +93,9 @@ class FactCheckManager:
                     portal_id   INTEGER,
                     headline    TEXT,
                     body        TEXT,
-                    author      TEXT,
-                    published   DATE,
-                    url         TEXT UNIQUE,
+                    article_author  TEXT,
+                    published_at DATE,
+                    article_url TEXT UNIQUE,
                     language    TEXT,
                     FOREIGN KEY (portal_id) REFERENCES portals (id)
                 )""")
@@ -99,7 +106,7 @@ class FactCheckManager:
                 (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
                     claim       TEXT UNIQUE,
-                    author      TEXT,
+                    claim_author      TEXT,
                     stated_at   DATE
                     
                 )""")
@@ -140,29 +147,29 @@ class FactCheckManager:
 
         # Case C: Handling empty data or a completely corrupted format
         if not claims_data or not isinstance(claims_data, list):
-            print(f"Warning: Invalid data format for {factcheck_url}. Skipping entry.")
+            logger.error(f"Error: Invalid data format for {factcheck_url}. Skipping entry.")
             return
 
         with self._get_connection() as conn:
 
             #Portal
-            conn.execute("INSERT OR IGNORE INTO portals (name, portal_url) VALUES (?, ?)", (portal_name,portal_url))
-            portal_id = conn.execute("SELECT id FROM portals WHERE name = ?", (portal_name,)).fetchone()[0]
+            conn.execute("INSERT OR IGNORE INTO portals (portal_name, portal_url) VALUES (?, ?)", (portal_name,portal_url))
+            portal_id = conn.execute("SELECT id FROM portals WHERE portal_name = ?", (portal_name,)).fetchone()[0]
 
             for claim in claims_data:  #Loop due to possible multiple entries in ‘claims_data’
 
                 #Review
-                conn.execute("INSERT OR IGNORE INTO claim_reviews (portal_id, headline, body, author, published, url ,language) "
+                conn.execute("INSERT OR IGNORE INTO claim_reviews (portal_id, headline, body, article_author, published_at, article_url ,language) "
                              "VALUES (?, ?, ?, ?, ?, ?, ?)",
                              (portal_id, claim["headline"], claim["body"], claim["author_factcheck"],
                                         claim["published_at"],factcheck_url, claim["language"]))
-                review_id = conn.execute("SELECT id FROM claim_reviews WHERE url = ?", (factcheck_url,)).fetchone()[0]
+                review_id = conn.execute("SELECT id FROM claim_reviews WHERE  article_url = ?", (factcheck_url,)).fetchone()[0]
 
                 #Claim
                 conn.execute(
-                    "INSERT OR IGNORE INTO claims (claim, author, stated_at) VALUES (?, ?, ?)",
+                    "INSERT OR IGNORE INTO claims (claim, claim_author, stated_at) VALUES (?, ?, ?)",
                     (claim["claim"], claim["author_claim"], claim["stated_at"]))
-                claim_id = conn.execute("SELECT id FROM claims WHERE claim IS ? AND author IS ?",
+                claim_id = conn.execute("SELECT id FROM claims WHERE claim IS ? AND claim_author IS ?",
                                         (claim["claim"], claim["author_claim"])).fetchone()[0]
 
                 #claim_ratings
@@ -170,6 +177,19 @@ class FactCheckManager:
                                     VALUES (?, ?, ?)""",
                                  (review_id, claim_id, claim["original_rating"]))
                 conn.commit()
+    def get_as_pd(self):
+        """
+
+        :return:
+        """
+        with self._get_connection() as conn:
+            return pd.read_sql_query("""SELECT *
+                                      FROM portals
+                                               JOIN claim_reviews ON portals.id = claim_reviews.portal_id
+                                               JOIN
+                                           claim_ratings ON claim_ratings.claim_review_id = claim_reviews.id
+                                               JOIN
+                                           claims ON claims.id = claim_ratings.claim_id """, conn)
 
     def export_as_csv(self,path):
         """
