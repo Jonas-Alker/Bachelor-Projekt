@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 import requests
 import os
 import json_repair
+import logging
+
+#Getting Logger
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -115,4 +119,4 @@ def parse_factcheck(html_content):
         parsed_data = json_repair.loads(reply_json_string)
         return parsed_data
     except Exception as e:
-        print(f"Error with the AI request: {e}")
+        logger.error(f"Error with the AI request: {e}")

@@ -3,6 +3,10 @@ import src.crawler.link_parser as link_parser
 import src.crawler.url_filter as url_filter
 from urllib.parse import urlparse
 from usp.tree import sitemap_tree_for_homepage
+import logging
+
+#Getting Logger
+logger = logging.getLogger(__name__)
 
 def search_sitemap_by_url(portal_name, portal_url, db):
     """Orchestrates the crawling process for a specific portal using sitemaps.
@@ -42,7 +46,7 @@ def find_sitemap_automatically(start_url, portal, db):
                     db.save_html(page, portal, r)
 
     except Exception as e:
-        print(f"Sitemap Error: {e}")
+        logger.error(f"Sitemap Automatic Crawl Error: {e}")
     if all_pages:
         return True
     return False
@@ -81,5 +85,5 @@ def crawl_sitemap_manually(start_url, portal, db):
                     
             del to_visit[current_url]
         except Exception as e:
-            print(f"Sitemap Manual Crawl Error: {e}")
+            logger.error(f"Sitemap Manual Crawl Error: {e}")
             continue

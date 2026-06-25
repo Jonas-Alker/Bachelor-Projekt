@@ -1,6 +1,10 @@
 import requests
 import time
 import random
+import logging
+
+#Getting Logger
+logger = logging.getLogger(__name__)
 
 def fetch_page(url, timeout= 10):
     """Fetches the HTML content of a given URL.
@@ -21,5 +25,5 @@ def fetch_page(url, timeout= 10):
         return r.text
 
     except Exception as e:
-        print(f"Fetch Error({url}): {e}")
+        logger.error(f"Fetch Error({url}): {e}")
         return None

@@ -2,6 +2,10 @@ import os
 import sys
 from pathlib import Path
 import importlib.util
+import logging
+
+#Getting Logger
+logger = logging.getLogger(__name__)
 
 GENERATED_DIR = Path(__file__).resolve().parent / "generated"
 
@@ -34,6 +38,7 @@ def preprocess(portal_name, html):
     """
     file_path = GENERATED_DIR / f"{portal_name.lower()}_preprocessor.py"
     if not file_path.exists():
+        logger.critical(f"Preprocessor for {portal_name.lower()} does not exist")
         raise FileNotFoundError(f"Preprocessor for {portal_name.lower()} does not exist")
 
     module_name = f"{portal_name.lower()}_preprocessor"
@@ -45,4 +50,5 @@ def preprocess(portal_name, html):
     if hasattr(module, 'preprocess_factcheck'):
         return module.preprocess_factcheck(html)
     else:
+        logger.critical(f"Preprocessor for {portal_name.lower()} has no function preprocess_factcheck.")
         raise AttributeError(f"Preprocessor for {portal_name.lower()} has no function preprocess_factcheck.")

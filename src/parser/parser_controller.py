@@ -3,7 +3,12 @@ import os
 import sys
 from pathlib import Path
 import importlib.util
+import logging
 
+#Getting Logger
+logger = logging.getLogger(__name__)
+
+#Output Path for generated parser
 GENERATED_DIR = Path(__file__).resolve().parent / "generated"
 
 def get_existing_parsers():
@@ -41,6 +46,7 @@ def parse(portal_name, html,llm_based=False):
     else:
         file_path = GENERATED_DIR / f"{portal_name.lower()}_parser.py"
         if not file_path.exists():
+            logger.error(f"Parser for {portal_name.lower()} does not exist")
             raise FileNotFoundError(f"Parser for {portal_name.lower()} does not exist")
 
         module_name = f"{portal_name.lower()}_parser"
@@ -52,4 +58,5 @@ def parse(portal_name, html,llm_based=False):
         if hasattr(module, 'parse_factcheck'):
             return module.parse_factcheck(html)
         else:
-            raise AttributeError(f"Preprocessor for {portal_name.lower()} has no function parse_factcheck.")
+            logger.error(f"Parser for {portal_name.lower()} has no function parse_factcheck.")
+            raise AttributeError(f"Parser for {portal_name.lower()} has no function parse_factcheck.")
