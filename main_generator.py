@@ -3,6 +3,12 @@ import src.parser.parser_controller as parser_c
 import tools.generate_parser as gen_parser
 import tools.generate_preprocessor as gen_preprocessor
 import json
+import logging.config
+from logging_config import LOGGING_SETUP
+
+#Load logging Config:
+logging.config.dictConfig(LOGGING_SETUP)
+logger = logging.getLogger("main_generator")
 
 def generate_missing_codes():
     """
@@ -13,11 +19,13 @@ def generate_missing_codes():
     existing_parser = parser_c.get_existing_parsers()
     existing_preprocessor = preprocessor_c.get_existing_preprocessors()
 
+    logger.info("Start generating missing codes")
     for portal in config:
         if portal['name'].lower() not in existing_parser:
             gen_parser.generate_parser(portal["factcheck_example"],portal['name'].lower())
         if portal['name'].lower() not in existing_preprocessor:
             gen_preprocessor.generate_preprocessor(portal["factcheck_example"],portal['name'].lower())
+    logger.info("Finished generating missing codes")
 
 if __name__ == "__main__":
     generate_missing_codes()
