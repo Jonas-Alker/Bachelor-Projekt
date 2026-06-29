@@ -339,8 +339,8 @@ def test_extraction_quality_with_claims_kg():
 
     for kg_row, llm_row in aligned_pairs:
         if kg_row and llm_row:
-            aligned_kg.update((kg_row["article_url"], kg_row["claim"]))
-            aligned_llm.update((llm_row["article_url"], llm_row["claim"]))
+            aligned_kg.add((kg_row["article_url"], kg_row["claim"]))
+            aligned_llm.add((llm_row["article_url"], llm_row["claim"]))
             aligned_count += 1
 
     not_aligned_kg = 0
@@ -349,10 +349,10 @@ def test_extraction_quality_with_claims_kg():
     for kg_row, llm_row in aligned_pairs:
         if not kg_row:
             if (llm_row["article_url"], llm_row["claim"]) not in aligned_llm:
-                not_aligned_kg += 1
+                not_aligned_llm += 1
         if not llm_row:
             if (kg_row["article_url"], kg_row["claim"]) not in aligned_kg:
-                not_aligned_llm += 1
+                not_aligned_kg += 1
 
     total_kg = aligned_count + not_aligned_kg
     total_llm = aligned_count + not_aligned_llm
