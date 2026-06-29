@@ -51,7 +51,7 @@ def extraction_llm_directly(portal, html):
     """
     return parser_controller.parse(portal, html, True)
 
-def extraction_normal(portal, html):
+def extraction_parser(portal, html):
     """
     Forwards the method call for extraction. The HTML is parsed using the generated parser scripts.
 
@@ -90,7 +90,7 @@ def test_extraction():
             html = load_html(link)
             manager_by_llm.add_fact_check(portal_name, portal_url, link, extraction_llm(portal_name, html))
             manager_by_llm_directly.add_fact_check(portal_name, portal_url, link, extraction_llm_directly(portal_name, html))
-            manager_by_parser.add_fact_check(portal_name, portal_url, link, extraction_normal(portal_name, html))
+            manager_by_parser.add_fact_check(portal_name, portal_url, link, extraction_parser(portal_name, html))
 
     #Export to csv
     manager_by_parser.export_as_csv(Path(__file__).resolve().parent / "evaluation_data" / "output" / "by_parser.csv")
@@ -171,14 +171,7 @@ def _compare_urls(url_a, url_b):
 
     return clean_a == clean_b
 
-def test_extraction_quality_with_claims_kg():
-    """
-    Compare data from Claims KG with the extracted LLM data.
-    To do this, the websites (URLs) from `evaluation_data/input/claim_comparison_claimsKG.json` are used as the data source.
-    A CSV file is created in `evaluation_data/output`, which compares the individual claims and shows the percentage match for each column.
-
-    :return: CSV file in folder `evaluation_data/output`
-    """
+def test_llm_extraction_quality_with_claims_kg():
     ## Load evaluation_data
     data_path = Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json"
     with open(data_path, "r") as f:
@@ -212,16 +205,75 @@ def test_extraction_quality_with_claims_kg():
     ## Preparing Data
     df_claimsKG = pd.DataFrame(claimsKG_results)
     df_llm = manager_by_llm.get_as_pd()
-    shared_columns = [col for col in df_claimsKG.columns if col in df_llm.columns and col != "article_url"]
+
+    ##Comparison
+    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" /"evaluation_claims_vs_llm.csv"
+    _evaluate_to_csv(df_claimsKG, df_llm,website_count,total_processing_time, output_path)
+
+
+def test_parser_extraction_quality_with_claims_kg():
+    ## Load evaluation_data
+    data_path = Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json"
+    with open(data_path, "r") as f:
+        file = json.load(f)
+
+    ## Create Databases
+    manager_by_parser = FactCheckManager(version="test_parser", mode="create", base_path="evaluation/evaluation_data/db")
+    claimsKG_results = []
+
+    ##Metrics
+    timer = timeit.default_timer
+    total_processing_time = 0
+    website_count = 0
+
+    ## Fill Database
+    for portal in file:
+        portal_name = portal["portal_name"]
+        portal_url = portal["portal_url"]
+        for link in portal["factchecks"]:
+            website_count += 1
+            html = load_html(link)
+
+            start_time = timer()
+            manager_by_parser.add_fact_check(portal_name, portal_url, link, extraction_parser(portal_name, html))
+            total_processing_time += timer() - start_time
+
+            kg_details = get_claim_details_by_url(link)
+            for claim_dict in kg_details:
+                claimsKG_results.append(claim_dict)
+
+    ## Preparing Data
+    df_claimsKG = pd.DataFrame(claimsKG_results)
+    df_llm = manager_by_parser.get_as_pd()
+
+    ##Comparison
+    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "evaluation_claims_vs_parser.csv"
+    _evaluate_to_csv(df_claimsKG, df_llm, website_count, total_processing_time, output_path)
+
+
+def _evaluate_to_csv(df_claimsKG,df_second_source,website_count, total_processing_time, output_path):
+    """
+    Compare data from Claims KG with the extracted data of a second source.
+    To do this, the websites (URLs) from `evaluation_data/input/claim_comparison_claimsKG.json` are used as the data source.
+    A CSV file is created in `evaluation_data/output`, which compares the individual claims and shows the percentage match for each column.
+
+    :param: df_claimsKG: dataframe of claims out of claimsKG
+    :param: df_second_source: dataframe of second source (e.g. llm, parser )
+    :param: website_count: number of websites tested
+    :param: total_processing_time: total processing time of data obtaining
+    :param: output_path: path to output file
+    :return: CSV file in folder `evaluation_data/output`
+    """
+
+    shared_columns = [col for col in df_claimsKG.columns if col in df_second_source.columns and col != "article_url"]
 
     ## Matching Claims
-
     aligned_pairs = []
-    unique_urls = sorted(list(set(df_claimsKG["article_url"].unique()) | set(df_llm["article_url"].unique())))
+    unique_urls = sorted(list(set(df_claimsKG["article_url"].unique()) | set(df_second_source["article_url"].unique())))
 
     for url in unique_urls:
         kg_subset = df_claimsKG[df_claimsKG["article_url"] == url].to_dict('records')
-        llm_subset = df_llm[df_llm["article_url"] == url].to_dict('records')
+        llm_subset = df_second_source[df_second_source["article_url"] == url].to_dict('records')
 
         all_pairs = []
         for kg_index, kg_row in enumerate(kg_subset):
@@ -371,4 +423,4 @@ def test_extraction_quality_with_claims_kg():
     cols = ["article_url", "Source"] + [col for col in shared_columns]
     df_export = df_export[[c for c in cols if c in df_export.columns]]
 
-    df_export.to_csv(Path(__file__).resolve().parent / "evaluation_data" / "output" /"evaluation_claims_vs_llm.csv", index=False, sep=";", encoding="utf-8-sig")
+    df_export.to_csv(output_path, index=False, sep=";", encoding="utf-8-sig")
