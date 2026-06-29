@@ -3,10 +3,13 @@ import json
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+import logging
 
-load_dotenv()
+#Getting Logger
+logger = logging.getLogger(__name__)
 
 # Configuration
+load_dotenv()
 API_KEY = os.getenv("KICONNECT_API_KEY")
 API_URL = "https://chat.kiconnect.nrw/api/v1/chat/completions"
 MODEL_ID = "MistralSmall_4"
@@ -124,6 +127,7 @@ def generate_preprocessor(url, portal_name):
 
         with open(path, "w", encoding="utf-8") as f:
             f.write(preprocessor_code)
-
+        logger.info(f"Successfully generated preprocessor for {portal_name.lower()}")
     except Exception as e:
-        print(f"Error with the AI request: {e}")
+        logger.error(f"Failed to generate preprocessor for {portal_name.lower()}: {e}")
+
