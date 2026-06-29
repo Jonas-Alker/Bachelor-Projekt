@@ -98,7 +98,9 @@ def get_claim_details_by_url(url):
 
             OPTIONAL {{ ?claimReview schema:headline ?headline . }}
             OPTIONAL {{ ?claimReview schema:datePublished ?published . }}
-            OPTIONAL {{ ?claimReview schema:inLanguage ?language . }}
+            OPTIONAL {{ 
+                ?claimReview schema:inLanguage ?languageNode . 
+                ?languageNode schema:alternateName ?language . }}
             OPTIONAL {{
                 ?claimReview schema:author ?portalNode .
                 OPTIONAL {{ ?portalNode schema:name ?portal_name . }}
