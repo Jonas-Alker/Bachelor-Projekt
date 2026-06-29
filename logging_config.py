@@ -1,7 +1,7 @@
 import os
 from os.path import exists
 
-os.makedirs("logs", exists_ok=True)
+os.makedirs("logs", exist_ok=True)
 
 LOGGING_SETUP = {
     "version": 1,
@@ -9,7 +9,7 @@ LOGGING_SETUP = {
 
     "formatters": {
         'standard': {
-            'format': '%(asctime)s | %(name)s-25s | %(levelname)s-8s | %(message)s',
+            'format': '%(asctime)s | %(name)-25s | %(levelname)-8s | %(message)s',
             'datefmt': '%d/%b/%Y %H:%M:%S',
         },
     },
