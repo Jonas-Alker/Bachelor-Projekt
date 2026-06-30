@@ -116,6 +116,7 @@ def _clean_string(text):
     :param text:  string to be processed
     :return: processed string
     """
+    text = str(text)
     if _is_empty_value(text):
         return ""
 
@@ -171,7 +172,7 @@ def _compare_urls(url_a, url_b):
 
     return clean_a == clean_b
 
-def test_llm_extraction_quality_with_claims_kg():
+def test_llm_extraction_quality_against_claims_kg():
     ## Load evaluation_data
     data_path = Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json"
     with open(data_path, "r") as f:
@@ -208,10 +209,42 @@ def test_llm_extraction_quality_with_claims_kg():
 
     ##Comparison
     output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" /"evaluation_claims_vs_llm.csv"
-    _evaluate_to_csv(df_claimsKG, df_llm,website_count,total_processing_time, output_path)
+    _evaluate_to_csv(df_claimsKG, df_llm,"ClaimsKG","LLM",website_count,total_processing_time, output_path)
+
+def test_llm_extraction_against_parser():
+    ## Load evaluation_data
+    data_path = Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json"
+    with open(data_path, "r") as f:
+        file = json.load(f)
+
+    ## Create Databases
+    manager_by_llm = FactCheckManager(version="test_llm", mode="create", base_path="evaluation/evaluation_data/db")
+    manager_by_parser = FactCheckManager(version="test_parser", mode="create", base_path="evaluation/evaluation_data/db")
+
+    ##Metrics
+    website_count = 0
+
+    ## Fill Database
+    for portal in file:
+        portal_name = portal["portal_name"]
+        portal_url = portal["portal_url"]
+        for link in portal["factchecks"]:
+            website_count += 1
+            html = load_html(link)
+
+            manager_by_parser.add_fact_check(portal_name, portal_url, link, extraction_parser(portal_name, html))
+            manager_by_llm.add_fact_check(portal_name, portal_url, link, extraction_llm_directly(portal_name, html))
 
 
-def test_parser_extraction_quality_with_claims_kg():
+    ## Preparing Data
+    df_parser = manager_by_parser.get_as_pd()
+    df_llm = manager_by_llm.get_as_pd()
+
+    ##Comparison
+    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" /"evaluation_parser_vs_llm.csv"
+    _evaluate_to_csv(df_parser, df_llm,"Parser", "LLM",website_count,-1, output_path, )
+
+def test_parser_extraction_against_claims_kg():
     ## Load evaluation_data
     data_path = Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json"
     with open(data_path, "r") as f:
@@ -244,17 +277,15 @@ def test_parser_extraction_quality_with_claims_kg():
 
     ## Preparing Data
     df_claimsKG = pd.DataFrame(claimsKG_results)
-    df_llm = manager_by_parser.get_as_pd()
+    df_parser = manager_by_parser.get_as_pd()
 
     ##Comparison
     output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "evaluation_claims_vs_parser.csv"
-    _evaluate_to_csv(df_claimsKG, df_llm, website_count, total_processing_time, output_path)
+    _evaluate_to_csv(df_claimsKG, df_parser,"ClaimsKG","Parser", website_count, total_processing_time, output_path)
 
-
-def _evaluate_to_csv(df_claimsKG,df_second_source,website_count, total_processing_time, output_path):
+def _evaluate_to_csv(df_first_source, df_second_source, name_first, name_second, website_count, total_processing_time, output_path):
     """
-    Compare data from Claims KG with the extracted data of a second source.
-    To do this, the websites (URLs) from `evaluation_data/input/claim_comparison_claimsKG.json` are used as the data source.
+    Compare data from given first source with the extracted data of a second source.
     A CSV file is created in `evaluation_data/output`, which compares the individual claims and shows the percentage match for each column.
 
     :param: df_claimsKG: dataframe of claims out of claimsKG
@@ -265,71 +296,71 @@ def _evaluate_to_csv(df_claimsKG,df_second_source,website_count, total_processin
     :return: CSV file in folder `evaluation_data/output`
     """
 
-    shared_columns = [col for col in df_claimsKG.columns if col in df_second_source.columns and col != "article_url"]
+    shared_columns = [col for col in df_first_source.columns if col in df_second_source.columns and col != "article_url"]
 
     ## Matching Claims
     aligned_pairs = []
-    unique_urls = sorted(list(set(df_claimsKG["article_url"].unique()) | set(df_second_source["article_url"].unique())))
+    unique_urls = sorted(list(set(df_first_source["article_url"].unique()) | set(df_second_source["article_url"].unique())))
 
     for url in unique_urls:
-        kg_subset = df_claimsKG[df_claimsKG["article_url"] == url].to_dict('records')
-        llm_subset = df_second_source[df_second_source["article_url"] == url].to_dict('records')
+        s1_subset = df_first_source[df_first_source["article_url"] == url].to_dict('records')
+        s2_subset = df_second_source[df_second_source["article_url"] == url].to_dict('records')
 
         all_pairs = []
-        for kg_index, kg_row in enumerate(kg_subset):
-            for llm_index, llm_row in enumerate(llm_subset):
-                score = _similarity(kg_row.get("claim", ""), llm_row.get("claim", ""))
-                all_pairs.append((kg_index, llm_index, score))
+        for s1_index, s1_row in enumerate(s1_subset):
+            for s2_index, s2_row in enumerate(s2_subset):
+                score = _similarity(s1_row.get("claim", ""), s2_row.get("claim", ""))
+                all_pairs.append((s1_index, s2_index, score))
 
         all_pairs.sort(key=lambda x: x[2], reverse=True)
 
-        used_kg_index = set()
-        used_llm_index = set()
+        used_s1_index = set()
+        used_s2_index = set()
 
         # Add best matching claims
-        for  kg_idx, llm_idx, score in all_pairs:
-            if kg_idx not in used_kg_index and llm_idx not in used_llm_index and score > 0.3:
-                aligned_pairs.append((kg_subset[kg_idx], llm_subset[llm_idx]))
+        for s1_idx, s2_idx, score in all_pairs:
+            if s1_idx not in used_s1_index and s2_idx not in used_s2_index and score > 0.3:
+                aligned_pairs.append((s1_subset[s1_idx], s2_subset[s2_idx]))
 
-                used_kg_index.add(kg_idx)
-                used_llm_index.add(llm_idx)
+                used_s1_index.add(s1_idx)
+                used_s2_index.add(s2_idx)
 
         # Treatment of the leftover claims
-        for i, kg_row in enumerate(kg_subset):
-            if i not in used_kg_index:
-                aligned_pairs.append((kg_row, None))
+        for i, s1_row in enumerate(s1_subset):
+            if i not in used_s1_index:
+                aligned_pairs.append((s1_row, None))
 
-        for j, llm_row in enumerate(llm_subset):
-            if j not in used_llm_index:
-                aligned_pairs.append((None, llm_row))
+        for j, s2_row in enumerate(s2_subset):
+            if j not in used_s2_index:
+                aligned_pairs.append((None, s2_row))
 
     ## Analysis and prepare CSV export
 
     alternating_data = []
     matches = {col: {"correct": 0, "total": 0} for col in shared_columns}
 
-    for kg_row, llm_row in aligned_pairs:
+    for s1_row, s2_row in aligned_pairs:
 
         # Insert ClaimsKG line
-        if kg_row:
-            row_c = kg_row.copy()
-            row_c["Source"] = "ClaimsKG"
+        if s1_row:
+            row_c = s1_row.copy()
+            row_c["Source"] = name_first
             alternating_data.append(row_c)
         else:
             row_c = {col: None for col in shared_columns}
-            row_c["Source"] = "ClaimsKG"
-            row_c["article_url"] = llm_row.get("article_url", "")
+            row_c["Source"] = name_first
+            row_c["article_url"] = s2_row.get("article_url", "")
             alternating_data.append(row_c)
 
         # Insert LLM line
-        if llm_row:
-            row_l = llm_row.copy()
-            row_l["Source"] = "LLM"
+        if s2_row:
+            row_l = s2_row.copy()
+            row_l["Source"] = name_second
             alternating_data.append(row_l)
         else:
             row_l = {col: None for col in shared_columns}
-            row_l["Source"] = "LLM"
-            row_l["article_url"] = kg_row.get("article_url", "")
+            row_l["Source"] = name_second
+            row_l["article_url"] = s1_row.get("article_url", "")
             alternating_data.append(row_l)
 
         empty_row = {col: "" for col in shared_columns}
@@ -338,29 +369,28 @@ def _evaluate_to_csv(df_claimsKG,df_second_source,website_count, total_processin
         alternating_data.append(empty_row)
 
         # Check for matching
-        if kg_row and llm_row:
+        if s1_row and s2_row:
             for col in shared_columns:
-                val_kg = kg_row.get(col)
-                val_llm = llm_row.get(col)
+                val_s1 = s1_row.get(col)
+                val_s2 = s2_row.get(col)
 
                 if col in ["published_at", "stated_at"]:
-                    if _compare_dates(val_kg, val_llm):
+                    if _compare_dates(val_s1, val_s2):
                         matches[col]["correct"] += 1
 
                 elif col == "portal_url":
-                    if _compare_urls(val_kg, val_llm):
+                    if _compare_urls(val_s1, val_s2):
                         matches[col]["correct"] += 1
 
-                elif _clean_string(val_kg) == _clean_string(val_llm):
+                elif _clean_string(val_s1) == _clean_string(val_s2):
                     matches[col]["correct"] += 1
 
                 matches[col]["total"] += 1
 
-
     for i in range(2):
         alternating_data.append({col: "" for col in shared_columns} | {"Source": "", "article_url": ""})
 
-    #Add percentages
+    # Add percentages
     title_row = {"Source": "column:", "article_url": ""}
     for col in shared_columns:
         title_row[col] = col
@@ -385,38 +415,38 @@ def _evaluate_to_csv(df_claimsKG,df_second_source,website_count, total_processin
 
     alternating_data.append({col: "" for col in shared_columns} | {"Source": "", "article_url": ""})
 
-    aligned_kg = set()
-    aligned_llm = set()
+    aligned_claims_s1 = set()
+    aligned_claims_s2 = set()
     aligned_count = 0
 
-    for kg_row, llm_row in aligned_pairs:
-        if kg_row and llm_row:
-            aligned_kg.add((kg_row["article_url"], kg_row["claim"]))
-            aligned_llm.add((llm_row["article_url"], llm_row["claim"]))
+    for s1_row, s2_row in aligned_pairs:
+        if s1_row and s2_row:
+            aligned_claims_s1.add((s1_row["article_url"], s1_row["claim"]))
+            aligned_claims_s2.add((s2_row["article_url"], s2_row["claim"]))
             aligned_count += 1
 
-    not_aligned_kg = 0
-    not_aligned_llm = 0
+    not_aligned_claims_s1 = 0
+    not_aligned_claims_s2 = 0
 
-    for kg_row, llm_row in aligned_pairs:
-        if not kg_row:
-            if (llm_row["article_url"], llm_row["claim"]) not in aligned_llm:
-                not_aligned_llm += 1
-        if not llm_row:
-            if (kg_row["article_url"], kg_row["claim"]) not in aligned_kg:
-                not_aligned_kg += 1
+    for s1_row, s2_row in aligned_pairs:
+        if not s1_row:
+            if (s2_row["article_url"], s2_row["claim"]) not in aligned_claims_s2:
+                not_aligned_claims_s2 += 1
+        if not s2_row:
+            if (s1_row["article_url"], s1_row["claim"]) not in aligned_claims_s1:
+                not_aligned_claims_s1 += 1
 
-    total_kg = aligned_count + not_aligned_kg
-    total_llm = aligned_count + not_aligned_llm
+    total_claims_s1 = aligned_count + not_aligned_claims_s1
+    total_claims_s2 = aligned_count + not_aligned_claims_s2
 
-    perc_kg = (aligned_count / total_kg * 100) if total_kg > 0 else 0
-    perc_llm = (aligned_count / total_llm * 100) if total_llm > 0 else 0
+    perc_kg = (aligned_count / total_claims_s1 * 100) if total_claims_s1 > 0 else 0
+    perc_llm = (aligned_count / total_claims_s2 * 100) if total_claims_s2 > 0 else 0
 
     alternating_data.append({"Source": "Alignment stats", "portal_name": ""})
     alternating_data.append(
-        {"Source": "ClaimsKG Aligned", "portal_name": f"{aligned_count} / {total_kg} ({perc_kg:.2f}%)"})
+        {"Source": f"{name_first} Aligned", "portal_name": f"{aligned_count} / {total_claims_s1} ({perc_kg:.2f}%)"})
     alternating_data.append(
-        {"Source": "LLM Aligned", "portal_name": f"{aligned_count} / {total_llm} ({perc_llm:.2f}%)"})
+        {"Source": f"{name_second} Aligned", "portal_name": f"{aligned_count} / {total_claims_s2} ({perc_llm:.2f}%)"})
 
     ## Make CSV
     df_export = pd.DataFrame(alternating_data)
