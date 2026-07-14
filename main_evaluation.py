@@ -1,7 +1,14 @@
 import argparse
 
-from evaluation.preprocess_and_parse_evaluation import test_extraction_quality_with_claims_kg
-from evaluation.preprocess_and_parse_evaluation import test_extraction
+from evaluation.evaluation_preprocess_and_parse import (
+    test_llm_directly_extraction_quality_against_claims_kg,
+    test_llm_directly_extraction_quality_against_ground_truth,
+    test_llm_preprocessed_extraction_quality_against_claims_kg,
+    test_llm_preprocessed_extraction_quality_against_ground_truth,
+    test_claims_kg_quality_against_ground_truth,
+    test_parser_against_claims_kg,
+    test_parser_against_ground_truth
+)
 import logging.config
 from logging_config import LOGGING_SETUP
 
@@ -15,32 +22,98 @@ def main():
         description="Management of the fact-checking evaluation pipeline."
     )
     parser.add_argument(
-        '--run-claims-kg',
-        action='store_true',
-        help="Runs the ClaimsKG-Extractions-evaluations."
+        '--run-llm-directly-claims-kg', action='store_true',
+        help="Runs test_llm_directly_extraction_quality_against_claims_kg"
     )
+    parser.add_argument(
+        '--run-llm-directly-ground-truth', action='store_true',
+        help="Runs test_llm_directly_extraction_quality_against_ground_truth"
+    )
+    parser.add_argument(
+        '--run-llm-preprocessed-claims-kg', action='store_true',
+        help="Runs test_llm_preprocessed_extraction_quality_against_claims_kg"
+    )
+    parser.add_argument(
+        '--run-llm-preprocessed-ground-truth', action='store_true',
+        help="Runs test_llm_preprocessed_extraction_quality_against_ground_truth"
+    )
+    parser.add_argument(
+        '--run-claims-kg-ground-truth', action='store_true',
+        help="Runs test_claims_kg_quality_against_ground_truth"
+    )
+    parser.add_argument(
+        '--run-parser-claims-kg', action='store_true',
+        help="Runs test_parser_against_claims_kg"
+    )
+    parser.add_argument(
+        '--run-parser-ground-truth', action='store_true',
+        help="Runs test_parser_against_ground_truth"
+    )
+
+
+
     parser.add_argument(
         '--run-all',
         action='store_true',
         help="Runs all available evaluations one after the other."
     )
+    parser.add_argument(
+        '--language', type=str, default="english",
+        help="Language parameter for ground truth evaluations (default: 'english' || Options: 'english'; 'german' )."
+    )
+
     args = parser.parse_args()
+
+    run_flags = [
+        args.run_llm_directly_claims_kg, args.run_llm_directly_ground_truth,
+        args.run_llm_preprocessed_claims_kg, args.run_llm_preprocessed_ground_truth,
+        args.run_claims_kg_ground_truth, args.run_parser_claims_kg,
+        args.run_parser_ground_truth, args.run_all
+    ]
+
+    if not any(run_flags):
+        logger.warning("No evaluation has been selected. View help.")
+        parser.print_help()
+        return
 
     if not any(vars(args).values()):
         logger.warning("No evaluation has been selected. View help.")
         parser.print_help()
         return
 
+
     logger.info("Start evaluation pipeline...")
 
     try:
-        if args.run_claims_kg or args.run_all:
-            logger.info("Start ClaimsKG evaluation (“test_extraction_quality_with_claims_kg”)...")
+        if args.run_all or args.run_llm_directly_claims_kg:
+            logger.info("Running: test_llm_directly_extraction_quality_against_claims_kg...")
+            test_llm_directly_extraction_quality_against_claims_kg()
 
+        if args.run_all or args.run_llm_directly_ground_truth:
+            logger.info(
+                f"Running: test_llm_directly_extraction_quality_against_ground_truth (language: {args.language})...")
+            test_llm_directly_extraction_quality_against_ground_truth(language=args.language)
 
-            test_extraction_quality_with_claims_kg()
+        if args.run_all or args.run_llm_preprocessed_claims_kg:
+            logger.info("Running: test_llm_preprocessed_extraction_quality_against_claims_kg...")
+            test_llm_preprocessed_extraction_quality_against_claims_kg()
 
-            logger.info("ClaimsKG evaluation successfully completed.")
+        if args.run_all or args.run_llm_preprocessed_ground_truth:
+            logger.info(
+                f"Running: test_llm_preprocessed_extraction_quality_against_ground_truth (language: {args.language})...")
+            test_llm_preprocessed_extraction_quality_against_ground_truth(language=args.language)
+
+        if args.run_all or args.run_claims_kg_ground_truth:
+            logger.info("Running: test_claims_kg_quality_against_ground_truth...")
+            test_claims_kg_quality_against_ground_truth()
+
+        if args.run_all or args.run_parser_claims_kg:
+            logger.info("Running: test_parser_against_claims_kg...")
+            test_parser_against_claims_kg()
+
+        if args.run_all or args.run_parser_ground_truth:
+            logger.info(f"Running: test_parser_against_ground_truth (language: {args.language})...")
+            test_parser_against_ground_truth(language=args.language)
 
     except Exception as e:
         logger.error(f"Critical error during evaluation: {e}")
