@@ -14,8 +14,14 @@ LOGGING_SETUP = {
         },
     },
     'handlers': {
-            'file_handler': {
-                'level': 'DEBUG',
+            'console': {
+                'level': 'INFO',
+                'formatter': 'standard',
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://sys.stdout'
+            },
+            'file_handler_info': {
+                'level': 'INFO',
                 'formatter': 'standard',
                 'class': 'logging.handlers.RotatingFileHandler',
                 'filename': 'logs/app.log',
@@ -23,10 +29,19 @@ LOGGING_SETUP = {
                 'backupCount': 5,
                 'encoding': 'utf-8',
             },
+            'file_handler_debug': {
+                'level': 'DEBUG',
+                'formatter': 'standard',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': 'logs/debug.log',
+                'maxBytes': 10000000,
+                'backupCount': 5,
+                'encoding': 'utf-8',
+            }
         },
     'loggers': {
         '': {
-            'handlers': ['file_handler'],
+            'handlers': ['file_handler_info', 'file_handler_debug', 'console'],
             'level': 'DEBUG',
             'propagate': True,
 
