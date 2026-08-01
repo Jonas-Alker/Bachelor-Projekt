@@ -13,5 +13,15 @@
     "name": "snopes",
     "url": "snopes.com",
     "factcheck_example" : "https://www.snopes.com/fact-check/trump-golf-miss-swing-video/"
+  },
+  {
+    "name": "correctiv",
+    "url": "correctiv.org",
+    "factcheck_example" : "https://correctiv.org/faktencheck/2024/07/23/huthi-angriff-im-roten-meer-was-hinter-diesen-bildern-der-uss-eisenhower-steckt/"
+  },
+  {
+    "name": "mimikama",
+    "url": "https://www.mimikama.org/",
+    "factcheck_example" : "https://www.mimikama.org/clickbait-angebliches-testament-von-alice-weidel/"
   }
 ]
