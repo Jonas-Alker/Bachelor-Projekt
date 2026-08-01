@@ -201,4 +201,5 @@ class FactCheckManager:
             df = pd.read_sql_query("""SELECT * FROM portals JOIN claim_reviews ON portals.id = claim_reviews.portal_id JOIN
                                     claim_ratings ON claim_ratings.claim_review_id = claim_reviews.id  JOIN
                                     claims ON claims.id = claim_ratings.claim_id """, conn)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             df.to_csv(path, index=False)
