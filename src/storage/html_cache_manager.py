@@ -67,6 +67,7 @@ class HTMLCacheManager:
             conn.execute("""
             CREATE TABLE web_cache (
                 url TEXT PRIMARY KEY,
+                portal_url TEXT,
                 portal TEXT,
                 html_content TEXT,
                 crawled_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -89,29 +90,31 @@ class HTMLCacheManager:
         """
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "SELECT portal, html_content, crawled_at FROM web_cache WHERE url = ?", (url,))
+                "SELECT portal, portal_url, html_content, crawled_at FROM web_cache WHERE url = ?", (url,))
             row = cursor.fetchone()
 
             if row:
                 return{
                     "portal": row["portal"],
+                    "portal_url": row["portal_url"],
                     "html_content": row["html_content"],
                     "crawled_at": row["crawled_at"]
                 }
             return None
 
-    def save_html(self, url, portal, html_content):
+    def save_html(self, url, portal, portal_url, html_content):
         """Saves or updates the HTML content of a URL in the database.
 
         :param url: The URL of the webpage (serves as the Primary Key).
         :param portal: The name of the web portal
+        :param portal_url: The URL of the web portal (domain)
         :param html_content: The raw HTML string content to cache.
         """
         try:
             with self._get_connection() as conn:
                 conn.execute("""
-                    INSERT OR REPLACE INTO web_cache (url, portal, html_content) VALUES (?, ?, ?)""",
-                             (url, portal, html_content))
+                    INSERT OR REPLACE INTO web_cache (url, portal, portal_url, html_content) VALUES (?, ?, ?, ?)""",
+                             (url, portal, portal_url, html_content))
                 conn.commit()
         except sqlite3.Error as e:
             logger.error(f"Error: {e}")
@@ -159,7 +162,7 @@ class HTMLCacheManager:
     def pop_next_page(self):
         with self._get_connection() as conn:
             row = conn.execute("""
-                SELECT url, portal, html_content
+                SELECT url, portal, portal_url, html_content
                 FROM web_cache
                 ORDER BY crawled_at ASC LIMIT 1
             """).fetchone()
