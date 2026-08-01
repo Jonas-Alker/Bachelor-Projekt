@@ -3,8 +3,30 @@ import time
 import random
 import logging
 
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
+
 #Getting Logger
 logger = logging.getLogger(__name__)
+
+session = requests.Session()
+session.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'DNT': '1',  # Do Not Track
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+})
+
+retries = Retry(
+    total=2,
+    backoff_factor=1,
+    status_forcelist=[500, 502, 503, 504],
+    raise_on_status=False
+)
+session.mount('https://', HTTPAdapter(max_retries=retries))
+session.mount('http://', HTTPAdapter(max_retries=retries))
 
 def fetch_page(url, timeout= 10):
     """Fetches the HTML content of a given URL.
@@ -20,10 +42,15 @@ def fetch_page(url, timeout= 10):
     try:
         time.sleep(random.uniform(0.1, 0.3))
 
-        r = requests.get(url, timeout=timeout)
+        r =session.get(url, timeout=timeout)
         r.raise_for_status()
         return r.text
-
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"HTTP Error ({url}): {e}")
+        return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Fetch Connection Error ({url}): {e}")
+        return None
     except Exception as e:
-        logger.error(f"Fetch Error({url}): {e}")
+        logger.error(f"Unexpected Error fetching ({url}): {e}")
         return None
