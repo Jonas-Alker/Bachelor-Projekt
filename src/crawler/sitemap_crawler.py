@@ -87,3 +87,14 @@ def crawl_sitemap_manually(start_url, portal, db):
         except Exception as e:
             logger.error(f"Sitemap Manual Crawl Error: {e}")
             continue
+
+def load_bulk(portal_data, db):
+    """Loads bulk data from a dictionary and saves it in db.
+
+    :param portal_data: dictionary containing multiple datasets of portals (html, portal url, portal name, url )
+    :param db: The database manager instance for saving HTML content.
+    """
+    for portal in portal_data:
+        for page in portal["factchecks"]:
+            r = requester.fetch_page(page)
+            db.save_html(page, portal["portal_name"],portal["portal_url"], r)
