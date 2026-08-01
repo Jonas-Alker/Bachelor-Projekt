@@ -41,6 +41,9 @@ def parse(portal_name, html,llm_based=False):
 
     :return:extraction results
     """
+    if not html:
+        logger.warning(f"Parsing interrupted: The HTML for {portal_name} is None or empty.")
+        return None
     if llm_based:
         return llm_parser.parse_factcheck(html)
     else:
@@ -56,7 +59,11 @@ def parse(portal_name, html,llm_based=False):
         spec.loader.exec_module(module)
 
         if hasattr(module, 'parse_factcheck'):
-            return module.parse_factcheck(html)
+            try:
+                return module.parse_factcheck(html)
+            except Exception as e:
+                logger.warning(f"Error parsing via parser {portal_name.lower()}: {e}")
+                return []
         else:
             logger.error(f"Parser for {portal_name.lower()} has no function parse_factcheck.")
             raise AttributeError(f"Parser for {portal_name.lower()} has no function parse_factcheck.")
