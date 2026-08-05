@@ -18,6 +18,8 @@ def search_sitemap_by_url(portal_name, portal_url, db):
     :param portal_url: The root/homepage URL of the portal to crawl.
     :param db: The database manager instance used to persist crawled pages.
     """
+    logger.info(f"Starting crawl process for '{portal_name}' at {portal_url}")
+
     #Use usp to get sitemap automatically
     confirm = find_sitemap_automatically(portal_url, portal_name, db)
 
@@ -47,7 +49,7 @@ def find_sitemap_automatically(start_url, portal, db):
             for page in all_pages:
                 url = page.url
                 if url_filter.filter_url(url, include, exclude):
-                    r = requester.fetch_page(page)
+                    r = requester.fetch_page(url)
                     if r:
                         db.save_html(url, portal, r)
 
