@@ -25,16 +25,23 @@ def load_few_shot():
     :return: few shot partial prompt
     """
     path = Path(__file__).resolve().parent.parent.parent / "data" / "parser" / "few_shot_examples.json"
-    with open(path, "r", encoding="utf-8") as f:
-        examples = json.load(f)
-    few_shots_message = []
-    for ex in examples:
-        few_shots_message.append({
-            "role": "user",
-            "content": f"Analyze the HTML document and extract the data in accordance with the defined schema:\n{ex['input_html']}"})
-        few_shots_message.append({"role": "assistant", "content": json.dumps(ex["expected_output"])})
-    logger.debug(f"Loaded {len(examples)} few-shot examples for LLM prompt.")
-    return few_shots_message
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            examples = json.load(f)
+        few_shots_message = []
+        for ex in examples:
+            few_shots_message.append({
+                "role": "user",
+                "content": f"Analyze the HTML document and extract the data in accordance with the defined schema:\n{ex['input_html']}"})
+            few_shots_message.append({"role": "assistant", "content": json.dumps(ex["expected_output"])})
+        logger.debug(f"Loaded {len(examples)} few-shot examples for LLM prompt.")
+        return few_shots_message
+    except FileNotFoundError:
+        logger.error(f"Few-shot examples file not found at {path}")
+        raise
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding JSON from few-shot examples: {e}")
+        raise
 
 
 def parse_factcheck(html_content):
