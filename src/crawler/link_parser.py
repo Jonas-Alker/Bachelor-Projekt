@@ -16,6 +16,6 @@ def extract_sublinks(html, base_url, domain):
         full_url = urljoin(base_url, link["href"]).split('#')[0].rstrip('/')
 
         if urlparse(full_url).netloc == domain:
-            if not any(ext in full_url for ext in [".jpg", ".pdf", ".png"]):
+            if not any(ext in full_url.lower() for ext in [".jpg", ".pdf", ".png"]):
                 found_links.add(full_url)
     return found_links
