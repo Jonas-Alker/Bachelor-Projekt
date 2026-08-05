@@ -27,19 +27,21 @@ class FactCheckManager:
 
         if mode == "load":
             if not os.path.exists(self.db_path):
-                logger.critical(f"Version {version} of db file not found: {self.db_path}")
+                logger.error(f"Version {version} of db file not found: {self.db_path}")
                 raise FileNotFoundError(f"Version {version} of db file not found: {self.db_path}")
+            logger.debug(f"Successfully loaded database from {self.db_path}")
 
         elif mode == "copy":
             if not source_path:
-                logger.critical("source_path must be provided when mode is 'copy'")
+                logger.error("source_path must be provided when mode is 'copy'")
                 raise ValueError("source_path must be provided when mode is 'copy'")
             if not os.path.exists(source_path):
-                logger.critical(f"Source database file not found: {source_path}")
+                logger.error(f"Source database file not found: {source_path}")
                 raise FileNotFoundError(f"Source database file not found: {source_path}")
             if not os.path.exists(base_path):
                 os.makedirs(base_path)
             shutil.copy2(source_path, self.db_path)
+            logger.debug(f"Successfully copied database from {source_path} to {self.db_path}")
 
         else: # mode == "create"
             if not os.path.exists(base_path):
@@ -123,6 +125,7 @@ class FactCheckManager:
                     FOREIGN KEY (claim_id) REFERENCES claims (id)
                 )""")
             conn.commit()
+            logger.debug("Database schema (fact checks) setup complete.")
 
     def add_fact_check(self, portal_name, portal_url, factcheck_url, claims_data):
         """
@@ -135,7 +138,11 @@ class FactCheckManager:
         :param claims_data: claims data, which contains all the extracted data and conforms to the defined JSON format
         """
         if isinstance(claims_data, str):
-            claims_data = json.loads(claims_data)
+            try:
+                claims_data = json.loads(claims_data)
+            except json.JSONDecodeError:
+                logger.error(f"Error: Invalid JSON string for {factcheck_url}. Skipping entry.")
+                return
 
         # Case A: The LLM has accidentally created nested lists: [[{...}]]
         if isinstance(claims_data, list) and len(claims_data) > 0 and isinstance(claims_data[0], list):
@@ -149,47 +156,56 @@ class FactCheckManager:
         if not claims_data or not isinstance(claims_data, list):
             logger.error(f"Error: Invalid data format for {factcheck_url}. Skipping entry.")
             return
+        try:
+            with self._get_connection() as conn:
 
-        with self._get_connection() as conn:
+                #Portal
+                conn.execute("INSERT OR IGNORE INTO portals (portal_name, portal_url) VALUES (?, ?)", (portal_name,portal_url))
+                portal_id = conn.execute("SELECT id FROM portals WHERE portal_name = ?", (portal_name,)).fetchone()[0]
 
-            #Portal
-            conn.execute("INSERT OR IGNORE INTO portals (portal_name, portal_url) VALUES (?, ?)", (portal_name,portal_url))
-            portal_id = conn.execute("SELECT id FROM portals WHERE portal_name = ?", (portal_name,)).fetchone()[0]
+                for claim in claims_data:  #Loop due to possible multiple entries in ‘claims_data’
 
-            for claim in claims_data:  #Loop due to possible multiple entries in ‘claims_data’
+                    #Review
+                    conn.execute("INSERT OR IGNORE INTO claim_reviews (portal_id, headline, body, article_author, published_at, article_url ,language) "
+                                 "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                 (portal_id, claim["headline"], claim["body"], claim["author_factcheck"],
+                                            claim["published_at"],factcheck_url, claim["language"]))
+                    review_id = conn.execute("SELECT id FROM claim_reviews WHERE  article_url = ?", (factcheck_url,)).fetchone()[0]
 
-                #Review
-                conn.execute("INSERT OR IGNORE INTO claim_reviews (portal_id, headline, body, article_author, published_at, article_url ,language) "
-                             "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                             (portal_id, claim["headline"], claim["body"], claim["author_factcheck"],
-                                        claim["published_at"],factcheck_url, claim["language"]))
-                review_id = conn.execute("SELECT id FROM claim_reviews WHERE  article_url = ?", (factcheck_url,)).fetchone()[0]
+                    #Claim
+                    conn.execute(
+                        "INSERT OR IGNORE INTO claims (claim, claim_author, stated_at) VALUES (?, ?, ?)",
+                        (claim["claim"], claim["author_claim"], claim["stated_at"]))
+                    claim_id = conn.execute("SELECT id FROM claims WHERE claim IS ? AND claim_author IS ?",
+                                            (claim["claim"], claim["author_claim"])).fetchone()[0]
 
-                #Claim
-                conn.execute(
-                    "INSERT OR IGNORE INTO claims (claim, claim_author, stated_at) VALUES (?, ?, ?)",
-                    (claim["claim"], claim["author_claim"], claim["stated_at"]))
-                claim_id = conn.execute("SELECT id FROM claims WHERE claim IS ? AND claim_author IS ?",
-                                        (claim["claim"], claim["author_claim"])).fetchone()[0]
+                    #claim_ratings
+                    conn.execute("""INSERT OR IGNORE INTO  claim_ratings (claim_review_id, claim_id, rating_original)
+                                        VALUES (?, ?, ?)""",
+                                     (review_id, claim_id, claim["original_rating"]))
+                    conn.commit()
+                    logger.debug(f"Successfully saved {len(claims_data)} claim(s) for {factcheck_url}")
+        except sqlite3.Error as e:
+            logger.error(f"SQLite error saving fact check {factcheck_url}: {e}")
 
-                #claim_ratings
-                conn.execute("""INSERT OR IGNORE INTO  claim_ratings (claim_review_id, claim_id, rating_original)
-                                    VALUES (?, ?, ?)""",
-                                 (review_id, claim_id, claim["original_rating"]))
-                conn.commit()
     def get_as_pd(self):
         """
-
-        :return:
+        Returns the joined tables from the database as a pandas DataFrame.
+        :return:pandas DataFrame containing all fact-check data.
         """
-        with self._get_connection() as conn:
-            return pd.read_sql_query("""SELECT *
-                                      FROM portals
+
+        try:
+            with self._get_connection() as conn:
+                return pd.read_sql_query("""SELECT *
+                                        FROM portals
                                                JOIN claim_reviews ON portals.id = claim_reviews.portal_id
                                                JOIN
                                            claim_ratings ON claim_ratings.claim_review_id = claim_reviews.id
                                                JOIN
                                            claims ON claims.id = claim_ratings.claim_id """, conn)
+        except Exception as e:
+            logger.error(f"Error fetching data to pandas DataFrame: {e}")
+            return pd.DataFrame()
 
     def export_as_csv(self,path):
         """
@@ -197,9 +213,13 @@ class FactCheckManager:
 
         :param path: path where the CSV file will be saved
         """
-        with self._get_connection() as conn:
-            df = pd.read_sql_query("""SELECT * FROM portals JOIN claim_reviews ON portals.id = claim_reviews.portal_id JOIN
-                                    claim_ratings ON claim_ratings.claim_review_id = claim_reviews.id  JOIN
-                                    claims ON claims.id = claim_ratings.claim_id """, conn)
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            df.to_csv(path, index=False)
+        try:
+            with self._get_connection() as conn:
+                df = pd.read_sql_query("""SELECT * FROM portals JOIN claim_reviews ON portals.id = claim_reviews.portal_id JOIN
+                                        claim_ratings ON claim_ratings.claim_review_id = claim_reviews.id  JOIN
+                                        claims ON claims.id = claim_ratings.claim_id """, conn)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                df.to_csv(path, index=False)
+                logger.debug(f"Successfully exported data to CSV at {path}")
+        except Exception as e:
+            logger.error(f"Error exporting data to CSV: {e}")
