@@ -23,7 +23,10 @@ def search_sitemap_by_url(portal_name, portal_url, db):
 
     #Fallback if usp does not work
     if not confirm:
+        logger.info(f"Automatic sitemap discovery failed for '{portal_name}'. Falling back to manual crawl.")
         crawl_sitemap_manually(portal_url, portal_name, db)
+    else:
+        logger.info(f"Successfully finished automatic sitemap crawl for '{portal_name}'.")
 
 def find_sitemap_automatically(start_url, portal, db):
     """Attempts to automatically discover, parse, and crawl a website's sitemap.
@@ -39,14 +42,17 @@ def find_sitemap_automatically(start_url, portal, db):
         tree = sitemap_tree_for_homepage(start_url)
         all_pages = list(tree.all_pages())
         if all_pages:
+            logger.info(f"Found {len(all_pages)} pages in sitemap for {start_url}")
             include, exclude = url_filter.load_rules(portal)
             for page in all_pages:
-                if url_filter.filter_url(page, include, exclude):
+                url = page.url
+                if url_filter.filter_url(url, include, exclude):
                     r = requester.fetch_page(page)
-                    db.save_html(page, portal, r)
+                    if r:
+                        db.save_html(url, portal, r)
 
     except Exception as e:
-        logger.error(f"Sitemap Automatic Crawl Error: {e}")
+        logger.error(f"Sitemap Automatic Crawl Error ({start_url}): {e}")
     if all_pages:
         return True
     return False
@@ -65,6 +71,8 @@ def crawl_sitemap_manually(start_url, portal, db):
     to_visit = {start_url: None}
     domain = urlparse(start_url).netloc
     include, exclude = url_filter.load_rules(portal)
+
+    logger.info(f"Starting manual crawl for '{portal}'.")
     while to_visit:
         current_url = next(iter(to_visit))
 
@@ -74,6 +82,10 @@ def crawl_sitemap_manually(start_url, portal, db):
         try:
             r = requester.fetch_page(current_url)
             visited_urls.add(current_url)
+
+            if not r:
+                del to_visit[current_url]
+                continue
 
             if url_filter.filter_url(current_url, include, exclude):
                 db.save_html(current_url, portal, r)
@@ -86,6 +98,8 @@ def crawl_sitemap_manually(start_url, portal, db):
             del to_visit[current_url]
         except Exception as e:
             logger.error(f"Sitemap Manual Crawl Error: {e}")
+            if current_url in to_visit:
+                del to_visit[current_url]
             continue
 
 def load_bulk(portal_data, db):
@@ -95,9 +109,15 @@ def load_bulk(portal_data, db):
     :param db: The database manager instance for saving HTML content.
     """
     for portal in portal_data:
+        portal_name = portal.get("portal_name", "unknown_portal")
+        logger.info(f"Starting bulk load for '{portal_name}'")
         for page in portal["factchecks"]:
-            r = requester.fetch_page(page)
-            db.save_html(page, portal["portal_name"],portal["portal_url"], r)
+            try:
+                r = requester.fetch_page(page)
+                if r:
+                    db.save_html(page, portal_name, portal["portal_url"], r)
+            except Exception as e:
+                logger.error(f"Error during bulk load for {page}: {e}")
 
 def fetch_page(url):
     """
