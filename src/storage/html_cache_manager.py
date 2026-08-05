@@ -22,21 +22,23 @@ class HTMLCacheManager:
         """
         self.db_path = os.path.join(base_path, f"html_raw_{version}.db")
 
+        logger.debug(f"Initializing HTMLCacheManager in '{mode}' mode (version: {version})")
         if mode == "load":
             if not os.path.exists(self.db_path):
-                logger.critical(f"Version {version} of db file not found: {self.db_path}")
+                logger.error(f"Version {version} of db file not found: {self.db_path}")
                 raise FileNotFoundError(f"Version {version} of db file not found: {self.db_path}")
 
         elif mode == "copy":
             if not source_path:
-                logger.critical("source_path must be provided when mode is 'copy'")
+                logger.error("source_path must be provided when mode is 'copy'")
                 raise ValueError("source_path must be provided when mode is 'copy'")
             if not os.path.exists(source_path):
-                logger.critical(f"Source database file not found: {source_path}")
+                logger.error(f"Source database file not found: {source_path}")
                 raise FileNotFoundError(f"Source database file not found: {source_path}")
             if not os.path.exists(base_path):
                 os.makedirs(base_path)
             shutil.copy2(source_path, self.db_path)
+            logger.debug(f"Successfully copied database from {source_path} to {self.db_path}")
 
         else: # mode == "create"
             if not os.path.exists(base_path):
@@ -74,12 +76,14 @@ class HTMLCacheManager:
             )
             """)
             conn.commit()
+            logger.debug("Database schema (web_cache) setup complete.")
 
     def _ensure_indexes(self):
         """Ensures that the indexes exist in the database."""
         with self._get_connection() as conn:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_crawled_at ON web_cache(crawled_at)")
             conn.commit()
+            logger.debug("Database indexes ensured.")
 
     def get_full_entry(self, url):
         """Retrieves the complete cache record for a specific URL.
@@ -117,7 +121,7 @@ class HTMLCacheManager:
                              (url, portal, portal_url, html_content))
                 conn.commit()
         except sqlite3.Error as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"SQLite error saving URL {url}: {e}")
 
     def get_urls_by_portal(self, portal):
         """Fetches all cached URLs associated with a specific portal.
@@ -128,6 +132,7 @@ class HTMLCacheManager:
         with self._get_connection() as conn:
             cursor = conn.execute("SELECT url FROM web_cache WHERE portal = ?", (portal,))
             urls = [row[0] for row in cursor.fetchall()]
+            logger.debug(f"Fetched {len(urls)} URLs for portal '{portal}'.")
             return urls
 
     def delete_url(self, url):
@@ -140,7 +145,7 @@ class HTMLCacheManager:
                 conn.execute("DELETE FROM web_cache WHERE url = ?", (url,))
                 conn.commit()
         except sqlite3.Error as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"SQLite error deleting URL {url}: {e}")
 
     def delete_urls_bulk(self, url_list):
         """Efficiently deletes a list of URLs in a single transaction.
@@ -150,6 +155,7 @@ class HTMLCacheManager:
         if not url_list:
             return
 
+        logger.debug(f"Executing bulk deletion for {len(url_list)} URLs.")
         formatted_data = [(url,) for url in url_list]
 
         try:
@@ -157,7 +163,7 @@ class HTMLCacheManager:
                 conn.executemany("DELETE FROM web_cache WHERE url = ?", formatted_data)
                 conn.commit()
         except sqlite3.Error as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"SQLite error in bulk deletion: {e}")
 
     def pop_next_page(self):
         with self._get_connection() as conn:
@@ -170,5 +176,6 @@ class HTMLCacheManager:
                 page = dict(row)
                 conn.execute("DELETE FROM web_cache WHERE url = ?", (page['url'],))
                 conn.commit()
+                logger.debug(f"Popped next page from queue: {page['url']}")
                 return page
             return None
