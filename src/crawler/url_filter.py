@@ -1,5 +1,9 @@
 import json
 import os
+import logging
+
+#Getting Logger
+logger = logging.getLogger(__name__)
 
 def load_rules(portal_name, config_path="config/filter_rules.json"):
     """Loads inclusion and exclusion rules for a specific portal from a JSON config file.
@@ -12,10 +16,20 @@ def load_rules(portal_name, config_path="config/filter_rules.json"):
     :return: A tuple containing two lists of strings: (include_rules, exclude_rules).
     """
     if not(os.path.exists(config_path)):
+        logger.warning(f"Filter rules file not found at '{config_path}'. Using hardcoded defaults.")
         return ["artikel"],["impressum"]
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            rules = json.load(f)
+    except json.decoder.JSONDecodeError:
+        logger.error(f"Error parsing JSON in '{config_path}': {e}. Using hardcoded defaults.")
+        return ["artikel"], ["impressum"]
+    except Exception as e:
+        logger.error(f"Unexpected error reading '{config_path}': {e}. Using hardcoded defaults.")
+        return ["artikel"], ["impressum"]
 
-    with open(config_path, "r", encoding="utf-8") as f:
-        rules = json.load(f)
+    if portal_name not in rules:
+        logger.info(f"No specific rules found for portal '{portal_name}'. Falling back to 'default'.")
 
     portal_rules = rules.get(portal_name, rules.get("default"))
     return portal_rules["include"], portal_rules["exclude"]
