@@ -61,21 +61,15 @@ def test_preprocessor_file_not_found(mock_path_exists, mock_error):
 @patch('importlib.util.module_from_spec')
 def test_parse_missing_function(mock_module_from_spec, mock_spec_from_file_location, mock_path_exists, mock_error):
     """
-    Tests the behaviour if the file exists but the preprocess_factcheck function is missing.
+    Tests the behavior if the file exists but the preprocess_factcheck function is missing.
     """
-    # 1. Wir tun so, als ob die Datei existiert
     mock_path_exists.return_value = True
-
-    # 2. Wir erstellen ein Modul-Mock, das ABSOLUT KEINE Eigenschaften hat (spec=[])
-    # Dadurch gibt hasattr(module, 'preprocess_factcheck') im Hauptcode garantiert False zurück!
     mock_module = MagicMock(spec=[])
     mock_module_from_spec.return_value = mock_module
 
-    # 3. Wir rufen die Funktion auf und erwarten den AttributeError
     with pytest.raises(AttributeError, match="Preprocessor for example_portal has no function preprocess_factcheck."):
         preprocess("example_portal", "<html>...</html>")
 
-    # 4. Jetzt überprüfen wir, ob der Logger im else-Zweig richtig gefeuert hat
     mock_error.assert_called_once()
     assert "has no function preprocess_factcheck" in mock_error.call_args[0][0]
 
