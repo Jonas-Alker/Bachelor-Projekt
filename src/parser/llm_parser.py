@@ -17,7 +17,7 @@ API_URL = "https://chat.kiconnect.nrw/api/v1/chat/completions"
 MODEL_ID = "MistralSmall_4"
 
 if not API_KEY:
-    print("Error: API_KEY is empty!")
+    logger.error("Error: API_KEY is empty!")
 
 def load_few_shot():
     """
@@ -33,6 +33,7 @@ def load_few_shot():
             "role": "user",
             "content": f"Analyze the HTML document and extract the data in accordance with the defined schema:\n{ex['input_html']}"})
         few_shots_message.append({"role": "assistant", "content": json.dumps(ex["expected_output"])})
+    logger.debug(f"Loaded {len(examples)} few-shot examples for LLM prompt.")
     return few_shots_message
 
 
@@ -111,12 +112,17 @@ def parse_factcheck(html_content):
     }
 
     try:
+        logger.debug("Sending extraction request to KIConnect API...")
         reply = requests.post(API_URL, headers=headers, json=data)
         reply.raise_for_status()
 
         reply_json_string = reply.json()["choices"][0]["message"]["content"]
         reply_json_string = reply_json_string.replace("```json", "").replace("```", "").strip()
         parsed_data = json_repair.loads(reply_json_string)
+        item_count = len(parsed_data) if isinstance(parsed_data, list) else 1
+        logger.debug(f"LLM extraction successful. Parsed {item_count} claim(s).")
+
         return parsed_data
     except Exception as e:
         logger.error(f"Error with the AI request: {e}")
+        return None
