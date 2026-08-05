@@ -18,6 +18,7 @@ def get_existing_preprocessors():
     preprocessors = []
 
     if not os.path.exists(GENERATED_DIR):
+        logger.debug(f"Generated preprocessor directory not found at {GENERATED_DIR}. Returning empty list.")
         return[]
 
     for filename in os.listdir(GENERATED_DIR):
@@ -38,7 +39,7 @@ def preprocess(portal_name, html):
     """
     file_path = GENERATED_DIR / f"{portal_name.lower()}_preprocessor.py"
     if not file_path.exists():
-        logger.critical(f"Preprocessor for {portal_name.lower()} does not exist")
+        logger.error(f"Preprocessor for {portal_name.lower()} does not exist")
         raise FileNotFoundError(f"Preprocessor for {portal_name.lower()} does not exist")
 
     module_name = f"{portal_name.lower()}_preprocessor"
@@ -48,7 +49,12 @@ def preprocess(portal_name, html):
     spec.loader.exec_module(module)
 
     if hasattr(module, 'preprocess_factcheck'):
-        return module.preprocess_factcheck(html)
+        logger.debug(f"Successfully loaded and executing preprocessor script for {portal_name.lower()}.")
+        try:
+            return module.preprocess_factcheck(html)
+        except Exception as e:
+            logger.error(f"Error during preprocessing via {portal_name.lower()}: {e}")
+            return None
     else:
-        logger.critical(f"Preprocessor for {portal_name.lower()} has no function preprocess_factcheck.")
+        logger.error(f"Preprocessor for {portal_name.lower()} has no function preprocess_factcheck.")
         raise AttributeError(f"Preprocessor for {portal_name.lower()} has no function preprocess_factcheck.")
