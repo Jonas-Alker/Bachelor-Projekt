@@ -69,3 +69,48 @@ def test_empty_html_or_no_links():
     """Test the behaviour with empty HTML or when there are no links."""
     html = "<html><body><p>Keine Links hier.</p></body></html>"
     assert extract_sublinks(html, BASE_URL, DOMAIN) == set()
+
+def test_ignore_mailto_and_javascript():
+    """Tests if mailto: and javascript: links are correctly ignored."""
+    html = """
+    <html>
+        <body>
+            <a href="mailto:test@example.com">Mail</a>
+            <a href="javascript:void(0)">JS</a>
+            <a href="javascript:alert('hello')">JS Alert</a>
+            <a href="/valid-page">Valid</a>
+        </body>
+    </html>
+    """
+    expected = {"https://example.com/valid-page"}
+    assert extract_sublinks(html, BASE_URL, DOMAIN) == expected
+
+def test_keep_query_parameters():
+    """Tests if valid query parameters are preserved in the URL."""
+    html = """
+    <html>
+        <body>
+            <a href="/search?q=faktencheck&page=1">Search</a>
+            <a href="https://example.com/article?id=42#comments">Article with Query and Fragment</a>
+        </body>
+    </html>
+    """
+    expected = {
+        "https://example.com/search?q=faktencheck&page=1",
+        "https://example.com/article?id=42"
+    }
+    assert extract_sublinks(html, BASE_URL, DOMAIN) == expected
+
+def test_ignore_uppercase_extensions():
+    """Tests if uppercase file extensions like .JPG or .PDF are ignored."""
+    html = """
+    <html>
+        <body>
+            <a href="/document.PDF">PDF Uppercase</a>
+            <a href="/image.JPG">JPG Uppercase</a>
+            <a href="/valid-page">Valid Page</a>
+        </body>
+    </html>
+    """
+    expected = {"https://example.com/valid-page"}
+    assert extract_sublinks(html, BASE_URL, DOMAIN) == expected
