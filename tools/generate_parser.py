@@ -106,7 +106,7 @@ def generate_parser(url, portal_name):
     }
 
     try:
-        logger.debug("Sending extraction request to KIConnect API...")
+        logger.debug("Sending generation request to KIConnect API...")
         response = requests.post(API_URL, headers=headers, json=data)
         response.raise_for_status()
 

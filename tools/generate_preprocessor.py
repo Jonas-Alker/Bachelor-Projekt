@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import logging
+from src.crawler.sitemap_crawler import fetch_page
 
 #Getting Logger
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ API_URL = "https://chat.kiconnect.nrw/api/v1/chat/completions"
 MODEL_ID = "MistralSmall_4"
 
 if not API_KEY:
-    print("Error: API_KEY is empty!")
+    logger.error("Error: API_KEY is empty!")
 
 # Target
 OUTPUT_DIR_PREPROCESSOR= Path(__file__).resolve().parent.parent / "src" / "preprocessor" / "generated"
@@ -27,14 +28,9 @@ def load_html(url):
     :param url: url to download
     :return: HTML content
     """
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
+    logger.debug(f"Attempting to download HTML from: {url}")
+    return fetch_page(url)
 
-    except Exception as e:
-        print(f"Error loading URL: {e}")
-        return None
 
 def load_few_shots():
     """
@@ -42,19 +38,28 @@ def load_few_shots():
         :return: few shot partial prompt
     """
     path = Path(__file__).resolve().parent.parent / "data" / "preprocessor" / "few_shot_examples.json"
-    with open(path, "r", encoding="utf-8") as f:
-        examples = json.load(f)
-    few_shots_message = []
-    for ex in examples:
-        few_shots_message.append({
-            "role": "user",
-            "content": f"Write the complete BeautifulSoup4 preprocessor for this type of HTML page::\n{ex['input_html']}"})
-        few_shots_message.append({"role": "assistant", "content": json.dumps(ex["expected_output"])})
-    return few_shots_message
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            examples = json.load(f)
+        few_shots_message = []
+        for ex in examples:
+            few_shots_message.append({
+                "role": "user",
+                "content": f"Write the complete BeautifulSoup4 preprocessor for this type of HTML page::\n{ex['input_html']}"})
+            few_shots_message.append({"role": "assistant", "content": json.dumps(ex["expected_output"])})
+        logger.debug(f"Loaded {len(examples)} few-shot examples for LLM prompt.")
+        return few_shots_message
+    except FileNotFoundError:
+        logger.error(f"Few-shot examples file not found at {path}")
+        raise
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding JSON from few-shot examples: {e}")
+        raise
 def generate_preprocessor(url, portal_name):
     html = load_html(url)
     if not html:
-       return
+        logger.error(f"Skipping preprocessor generation for {portal_name.lower()}: HTML could not be loaded.")
+        return
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {API_KEY}"
@@ -115,6 +120,7 @@ def generate_preprocessor(url, portal_name):
     }
 
     try:
+        logger.debug("Sending generation request to KIConnect API...")
         response = requests.post(API_URL, headers=headers, json=data)
         response.raise_for_status()
 
