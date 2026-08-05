@@ -20,6 +20,7 @@ def get_existing_parsers():
     parsers = []
 
     if not os.path.exists(GENERATED_DIR):
+        logger.debug(f"Generated directory not found at {GENERATED_DIR}. Returning empty parser list.")
         return[]
 
     for filename in os.listdir(GENERATED_DIR):
@@ -45,6 +46,7 @@ def parse(portal_name, html,llm_based=False):
         logger.warning(f"Parsing interrupted: The HTML for {portal_name} is None or empty.")
         return None
     if llm_based:
+        logger.debug(f"Routing parsing for {portal_name} to LLM.")
         return llm_parser.parse_factcheck(html)
     else:
         file_path = GENERATED_DIR / f"{portal_name.lower()}_parser.py"
@@ -59,6 +61,7 @@ def parse(portal_name, html,llm_based=False):
         spec.loader.exec_module(module)
 
         if hasattr(module, 'parse_factcheck'):
+            logger.debug(f"Successfully loaded and executing script parser for {portal_name.lower()}.")
             try:
                 return module.parse_factcheck(html)
             except Exception as e:
