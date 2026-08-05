@@ -21,7 +21,7 @@ def load_rules(portal_name, config_path="config/filter_rules.json"):
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             rules = json.load(f)
-    except json.decoder.JSONDecodeError:
+    except json.JSONDecodeError as e:
         logger.error(f"Error parsing JSON in '{config_path}': {e}. Using hardcoded defaults.")
         return ["artikel"], ["impressum"]
     except Exception as e:
