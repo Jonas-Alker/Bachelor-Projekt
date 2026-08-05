@@ -98,3 +98,13 @@ def load_bulk(portal_data, db):
         for page in portal["factchecks"]:
             r = requester.fetch_page(page)
             db.save_html(page, portal["portal_name"],portal["portal_url"], r)
+
+def fetch_page(url):
+    """
+    Fetches the web page content for the specified URL by delegating to the requester.
+
+    :param url: The web address of the page to fetch.
+    :return: The raw HTML content of the page as a string if successful;
+        None if an HTTP error or connection issue occurs.
+    """
+    return requester.fetch_page(url)

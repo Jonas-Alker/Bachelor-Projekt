@@ -1,6 +1,7 @@
 import re
 import requests
 import pandas as pd
+import src.crawler.sitemap_crawler as sitemap_crawler
 
 from datetime import datetime
 from typing import Any, Literal
@@ -73,14 +74,8 @@ def load_html(url):
     :param url: url to download
     :return: HTML content
     """
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
+    return sitemap_crawler.fetch_page(url)
 
-    except Exception as e:
-        print(f"Error loading URL: {e}")
-        return None
 
 def _parse_date_safe(d_str):
     """
