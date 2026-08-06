@@ -4,8 +4,8 @@ from src.crawler.sitemap_crawler import search_sitemap_by_url
 from src.crawler.sitemap_crawler import load_bulk
 from src.parser.parser_controller import parse
 import src.storage.html_cache_manager as html_cache_manager
+from src.preprocessor import preprocessor_controller
 from src.storage import fact_check_manager
-from src.storage.fact_check_manager import FactCheckManager
 import logging
 import logging.config
 from logging_config import LOGGING_SETUP
@@ -87,7 +87,7 @@ def main():
                 logger.critical(f"Error: {e}")
         else:
             logger.critical(f"Error: {args.html_db_version_mode} mode does not exist for HTMLCacheManager.\n Exiting pipline.")
-            exit
+
     else:
         hcm = html_cache_manager.HTMLCacheManager(version=args.html_db_version, mode="create")
 
@@ -126,6 +126,15 @@ def main():
     if args.use_preprocessor:
         logger.info("Start Preprocessing...")
 
+        preprocessor_hcm = html_cache_manager.HTMLCacheManager(version= args.html_db_version +"_after_preprocessor", mode="create")
+        while factcheck := hcm.pop_next_page():
+            try:
+                preprocessed = preprocessor_controller.preprocess(factcheck['portal'],factcheck['html_content'])
+                preprocessor_hcm.save_html(factcheck['url'], factcheck['portal'], factcheck['portal_url'], preprocessed)
+            except Exception as e:
+                logger.error(f"Error: {e}")
+        hcm = preprocessor_hcm
+
 
     if args.use_generated_parser:
         logger.info("Start Extraction via generated Parser ...")
@@ -134,7 +143,7 @@ def main():
                 data = parse(factcheck['portal'], factcheck['html_content'])
                 fcm.add_fact_check(factcheck['portal'],factcheck['portal_url'], factcheck['url'], data)
             except Exception as e:
-                logger.critical(f"Error: {e}")
+                logger.error(f"Error: {e}")
 
     else:
         logger.info("Start Extraction via LLM Parser ...")
@@ -143,7 +152,7 @@ def main():
                 data = parse(factcheck['portal'], factcheck['html_content'], True)
                 fcm.add_fact_check(factcheck['portal'],factcheck['portal_url'], factcheck['url'], data)
             except Exception as e:
-                logger.critical(f"Error: {e}")
+                logger.error(f"Error: {e}")
 
     fcm.export_as_csv(OUTPUT)
 if __name__ == "__main__":
