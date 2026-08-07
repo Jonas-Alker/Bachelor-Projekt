@@ -34,10 +34,10 @@ def load_html(url):
 
 def load_few_shots():
     """
-        Loads a few shot partial prompt, if any are stored in the file 'data/parser/few_shot_examples.json'.
+        Loads a few shot partial prompt, if any are stored in the file 'config/few_shot/few_shot_preprocessor_examples.json'.
         :return: few shot partial prompt
     """
-    path = Path(__file__).resolve().parent.parent / "data" / "preprocessor" / "few_shot_examples.json"
+    path = Path(__file__).resolve().parent.parent / "config" / "few_shot" / "few_shot_preprocessor_examples.json"
     try:
         with open(path, "r", encoding="utf-8") as f:
             examples = json.load(f)

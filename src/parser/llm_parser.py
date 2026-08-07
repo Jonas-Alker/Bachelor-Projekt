@@ -21,10 +21,10 @@ if not API_KEY:
 
 def load_few_shot():
     """
-    Loads a few shot partial prompt, if any are stored in the file 'data/parser/few_shot_examples.json'.
+    Loads a few shot partial prompt, if any are stored in the file 'config/few_shot/few_shot_extraction_examples.json'.
     :return: few shot partial prompt
     """
-    path = Path(__file__).resolve().parent.parent.parent / "data" / "parser" / "few_shot_examples.json"
+    path = Path(__file__).resolve().parent.parent.parent / "config" / "few_shot" / "few_shot_extraction_examples.json"
     try:
         with open(path, "r", encoding="utf-8") as f:
             examples = json.load(f)
