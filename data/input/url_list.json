@@ -3,9 +3,7 @@
      "portal_name": "politifact" ,
      "portal_url": "politifact.com",
      "factchecks": ["https://www.politifact.com/factchecks/2026/jun/15/josh-hokit/josh-hokit-ufc-white-house-michelle-obama/",
-                    "https://www.politifact.com/factchecks/2010/jul/06/daniel-senor/senor-inflates-japans-interest-payments/",
-                    "https://www.politifact.com/factchecks/2021/oct/29/facebook-posts/posts-about-virginia-voters-being-forced-sign-form/",
-                    "https://www.politifact.com/factchecks/2021/oct/28/randy-feenstra/biden-administration-predicted-liquid-fuel-cars-ou/"
+                    "https://www.politifact.com/factchecks/2010/jul/06/daniel-senor/senor-inflates-japans-interest-payments/"
      ]
   },
      {
