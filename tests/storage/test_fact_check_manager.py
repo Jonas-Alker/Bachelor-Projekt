@@ -225,3 +225,39 @@ def test_export_as_csv_error(mock_read_sql, mock_error, db):
 
     mock_error.assert_called_once()
     assert "Error exporting data to CSV" in mock_error.call_args[0][0]
+
+
+def test_get_rdf_export_data_success(db):
+    """Tests if get_rdf_export_data correctly returns the joined data with aliased IDs."""
+    db.add_fact_check("Portal", "https://portal.com", "https://portal.com/fc", DUMMY_CLAIM)
+
+    df = db.get_rdf_export_data()
+
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) == 1
+
+    expected_columns = [
+        'review_id', 'headline', 'body', 'article_author', 'published_at',
+        'article_url', 'language', 'claim_id', 'claim', 'claim_author',
+        'stated_at', 'portal_id', 'portal_name', 'portal_url', 'rating_original'
+    ]
+    for col in expected_columns:
+        assert col in df.columns, f"Spalte '{col}' fehlt im DataFrame für den RDF-Export."
+
+    assert df.iloc[0]["portal_name"] == "Portal"
+    assert df.iloc[0]["claim"] == "Test Claim"
+    assert df.iloc[0]["rating_original"] == "False"
+
+
+@patch('src.storage.fact_check_manager.logger.error')
+@patch('src.storage.fact_check_manager.pd.read_sql_query')
+def test_get_rdf_export_data_error(mock_read_sql, mock_error, db):
+    """Tests if a failure during fetching RDF export data is safely caught, logged, and returns an empty DataFrame."""
+    mock_read_sql.side_effect = Exception("Database read error")
+
+    df = db.get_rdf_export_data()
+
+    assert isinstance(df, pd.DataFrame)
+    assert df.empty
+    mock_error.assert_called_once()
+    assert "Error fetching data for RDF export" in mock_error.call_args[0][0]
