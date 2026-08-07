@@ -13,7 +13,7 @@ GENERATED_DIR = Path(__file__).resolve().parent / "generated"
 
 def get_existing_parsers():
     """
-    Returns the portals for which a preprocessor has already been generated.
+    Returns the portals for which a parser has already been generated.
 
     :return: list of portals
     """

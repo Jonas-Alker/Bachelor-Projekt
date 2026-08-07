@@ -12,7 +12,7 @@ logger = logging.getLogger("main_generator")
 
 def generate_missing_codes():
     """
-    Compare the portals stored in config.json with the existing parsers and preprocessors, and generate any missing ones.
+    Compare the portals stored in config/portals.json with the existing parsers and preprocessors, and generate any missing ones.
     """
     with open("config/portals.json", "r") as f:
         config = json.load(f)
