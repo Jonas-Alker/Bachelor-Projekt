@@ -19,11 +19,16 @@ The project is strictly separated by responsibilities. The generated and require
 ## ⚙️ Configuration Before Start
 
 Before the scripts can be executed, the following files should be checked and populated if necessary:
+Before the scripts can be executed, the following files should be checked and populated if necessary:
 
-1.  **`config/portals.json`**: The core for code generation and the crawler. The target portals are defined here ( with the portal's `name` , `url` and a `factcheck_example` link).
-2.  **`config/filter_rules.json`**: Controls the rule-based URL filter during crawling. Using `include` (at least one term must appear in the URL) and `exclude` (must not appear in the URL), it strictly decides whether a discovered URL is added to the cache.
-3.  **`data/input/url_list.json`**: Must be filled with specific target URLs if you intend to run the pipeline using the `--use-url-list` flag.
-4.  **`config/few_shots.json`** *(Experimental)*: A approach to provide the LLM with specific examples (few-shot prompting) for extraction. *Note: This feature is implemented but not yet fully tested.*
+1.  **`.env` File (API Key)**: You must create a `.env` file in the project's root directory. This file is required to securely store your KI Connect API key. Add the following line to it:
+    ```env
+    KICONNECT_API_KEY=your_api_key_here
+    ```
+2.  **`config/portals.json`**: The core for code generation and the crawler. The target portals are defined here (e.g., with the portal's name and a `factcheck_example` link).
+3.  **`config/filter_rules.json`**: Controls the rule-based URL filter during crawling. Using `include` (at least one term must appear in the URL) and `exclude` (must not appear in the URL), it strictly decides whether a discovered URL is added to the cache.
+4.  **`data/input/url_list.json`**: Must be filled with specific target URLs if you intend to run the pipeline using the `--use-url-list` flag.
+5.  **`config/few_shots.json`** *(Experimental)*: A theoretical approach to provide the LLM with specific examples (few-shot prompting) for extraction. *Note: This feature is implemented but not yet fully tested.*
 
 ---
 
