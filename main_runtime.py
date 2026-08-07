@@ -42,31 +42,30 @@ def main():
     )
     parser.add_argument(
         '--html-db-version-mode',nargs='+', type=str,
-        help="1 modus, 2 copy path"
-    )
+        help="Mode for the HTML cache DB. Requires 1 or 2 arguments: <mode> (load or copy) and optionally [source_path] (full path, only required for 'copy')."    )
     parser.add_argument(
         '--html-db-version', type=str,
-        help=""
+        help="Version name of the HTML cache DB. Used for naming or locating the DB in 'data/raw/'."
     )
     parser.add_argument(
         '--factcheck-db-version-mode',nargs='+', type=str,
-        help="1 modus, 2 copy path"
+        help="Mode for the FactCheck DB. Requires 1 or 2 arguments: <mode> (load or copy) and optionally [source_path] (full path, only required for 'copy')."
     )
     parser.add_argument(
         '--factcheck_db_version', type=str,
-        help=""
+        help="Version name of the FactCheck DB. Used for naming or locating the DB in 'data/raw/'."
     )
     parser.add_argument(
         '--use-url-list', action='store_true',
-        help=""
+        help="Skips the sitemap crawler and loads target URLs directly from 'data/input/url_list.json'."
     )
     parser.add_argument(
         '--use-preprocessor', action='store_true',
-        help=""
+        help="Activates HTML preprocessing (cleaning/shortening) before the extraction phase."
     )
     parser.add_argument(
         '--use-generated-parser', action='store_true',
-        help=""
+        help="Uses the locally generated portal parsers instead of LLM extraction."
     )
 
 
