@@ -26,6 +26,12 @@ def mock_debug_logger():
     with patch('src.storage.fact_check_manager.logger.debug') as mock_debug:
         yield mock_debug
 
+@pytest.fixture(autouse=True)
+def mock_info_logger():
+    """Globally mocks the debug logger for all tests to keep the console output clean."""
+    with patch('src.storage.fact_check_manager.logger.info') as mock_info:
+        yield mock_info
+
 
 @pytest.fixture
 def db(tmp_path):
@@ -165,12 +171,12 @@ def test_get_as_pd(db):
     assert "rating_original" in df.columns
 
 
-def test_export_as_csv(db, tmp_path, mock_debug_logger):
+def test_export_as_csv(db, tmp_path, mock_info_logger):
     """Tests if the database content is correctly exported to a CSV file."""
     db.add_fact_check("Portal", "https://portal.com", "https://portal.com/fc", DUMMY_CLAIM)
 
     csv_path = tmp_path / "export.csv"
-    mock_debug_logger.reset_mock()
+    mock_info_logger.reset_mock()
 
     db.export_as_csv(str(csv_path))
 
@@ -179,8 +185,8 @@ def test_export_as_csv(db, tmp_path, mock_debug_logger):
     assert len(exported_df) == 1
     assert exported_df.iloc[0]["portal_name"] == "Portal"
 
-    mock_debug_logger.assert_called_once()
-    assert "Successfully exported data to CSV" in mock_debug_logger.call_args[0][0]
+    mock_info_logger.assert_called_once()
+    assert "Successfully exported data to CSV" in mock_info_logger.call_args[0][0]
 
 
 # Exception Handling Tests (SQLite & Pandas)
@@ -261,3 +267,53 @@ def test_get_rdf_export_data_error(mock_read_sql, mock_error, db):
     assert df.empty
     mock_error.assert_called_once()
     assert "Error fetching data for RDF export" in mock_error.call_args[0][0]
+
+
+def test_claim_deduplication_logic(db):
+    """Tests if identical claims from different articles are deduplicated correctly in the database."""
+
+    db.add_fact_check("Portal1", "https://portal1.com", "https://portal1.com/fc1", [DUMMY_CLAIM])
+
+    db.add_fact_check("Portal2", "https://portal2.com", "https://portal2.com/fc2", [DUMMY_CLAIM])
+
+    with db._get_connection() as conn:
+        claims_count = conn.execute("SELECT COUNT(*) FROM claims").fetchone()[0]
+        reviews_count = conn.execute("SELECT COUNT(*) FROM claim_reviews").fetchone()[0]
+        ratings_count = conn.execute("SELECT COUNT(*) FROM claim_ratings").fetchone()[0]
+
+        assert claims_count == 1
+        assert reviews_count == 2
+        assert ratings_count == 2
+        claim_ids = conn.execute("SELECT claim_id FROM claim_ratings").fetchall()
+        assert claim_ids[0]['claim_id'] == claim_ids[1]['claim_id']
+
+    df = db.get_as_pd()
+    assert len(df) == 2
+
+
+def test_get_existing_article_urls_success(db):
+    """Tests if the method correctly retrieves all unique article URLs from the database."""
+    urls_empty = db.get_existing_article_urls()
+    assert isinstance(urls_empty, list)
+    assert len(urls_empty) == 0
+
+    db.add_fact_check("Portal1", "https://portal1.com", "https://portal1.com/fc1", [DUMMY_CLAIM])
+    db.add_fact_check("Portal2", "https://portal2.com", "https://portal2.com/fc2", [DUMMY_CLAIM])
+
+    urls = db.get_existing_article_urls()
+
+    assert len(urls) == 2
+    assert "https://portal1.com/fc1" in urls
+    assert "https://portal2.com/fc2" in urls
+
+
+@patch('src.storage.fact_check_manager.logger.error')
+def test_get_existing_article_urls_error(mock_error, db):
+    """Tests if database errors during URL retrieval are caught and return an empty list."""
+    with patch.object(db, '_get_connection', side_effect=Exception("Database connection failed")):
+        urls = db.get_existing_article_urls()
+
+        assert isinstance(urls, list)
+        assert len(urls) == 0
+        mock_error.assert_called_once()
+        assert "Error fetching existing URLs" in mock_error.call_args[0][0]

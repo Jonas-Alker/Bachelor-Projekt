@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 from src.storage.html_cache_manager import HTMLCacheManager
 import pytest
@@ -11,19 +12,12 @@ def mock_debug_logger():
         yield mock_debug
 
 @pytest.fixture
-def db():
+def db(tmp_path):
     """Provides a fresh, temporary database instance for testing."""
-    test_db_path = "tests/test_data/raw"
-    manager = HTMLCacheManager(version="test_v1", mode= "create",base_path=test_db_path)
-    db_file_path = manager.db_path
-
+    manager = HTMLCacheManager(version="test_v1", mode="create", base_path=str(tmp_path))
     yield manager
     del manager
-    if os.path.exists(db_file_path):
-        try:
-            os.remove(db_file_path)
-        except PermissionError as e:
-            print(f"Error: {e}")
+
 
 def test_save_and_get_html(db):
     """Tests if an HTML entry can be successfully saved and subsequently retrieved."""
