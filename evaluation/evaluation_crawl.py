@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from src.crawler.sitemap_crawler import search_sitemap_by_url
 from src.crawler.url_filter import filter_url, load_rules
 from evaluation.claimskg_client import get_urls_from_claimskg
@@ -9,10 +11,11 @@ def test_ClaimsKG_comparision():
     """
     portal = "Politifact"
     url = "https://www.politifact.com/"
-    test_db_path = "tests/test_data/raw"
+    test_db_path = Path(__file__).resolve().parent / "evaluation_data" / "raw"
+
 
     #Crawl
-    manager_raw = HTMLCacheManager(version="test_ClaimsKg", mode="create", base_path=test_db_path)
+    manager_raw = HTMLCacheManager(version="test_Crawling_against_ClaimsKg", mode="create", base_path=test_db_path)
     search_sitemap_by_url(portal, url, manager_raw)
 
     #Get Data
@@ -27,32 +30,14 @@ def test_ClaimsKG_comparision():
     only_in_db = db_urls - claimskg_urls
 
     #Write
-    with open("tests/test_data/raw/only_in_claimskg.txt", "w", encoding="utf-8") as f:
+    output_dir = Path(__file__).resolve().parent / "evaluation_data" / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with open(output_dir / "only_in_claimskg.txt", "w", encoding="utf-8") as f:
         for url in sorted(only_in_claimskg):
             f.write(f"{url}\n")
 
-    with open("tests/test_data/raw/only_in_database.txt", "w", encoding="utf-8") as f:
+    with open(output_dir / "only_in_database.txt", "w", encoding="utf-8") as f:
         for url in sorted(only_in_db):
             f.write(f"{url}\n")
 
     del manager_raw
-
-
-def test_clean_db():
-    """
-    To re-filter the test database that had already been crawled,
-    if the filter had to be adjusted
-    """
-    portal = "Politifact"
-    test_db_path = "tests/test_data/raw"
-    test_source_path = "tests/test_data/raw/factencheck_test_ClaimsKg.db"
-
-    manager = HTMLCacheManager(version="test_ClaimsKg", mode="load", base_path=test_db_path, source_path = test_source_path)
-    urls = manager.get_urls_by_portal(portal)
-
-    include, exclude = load_rules(portal)
-    urls_to_delete = [url for url in urls if not filter_url(url, include, exclude)]
-
-    if urls_to_delete:
-        manager.delete_urls_bulk(urls_to_delete)
-    del manager
