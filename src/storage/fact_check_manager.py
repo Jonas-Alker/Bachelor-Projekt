@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class FactCheckManager:
-    def __init__(self, version= "v1", mode="create", base_path="data/", source_path = None):
+    def __init__(self, version= "v1", mode="create", base_path="data/raw", source_path = None):
         """
         Initializes the FactCheckManager and establishes the database file path.
 
@@ -168,25 +168,27 @@ class FactCheckManager:
                     #Review
                     conn.execute("INSERT OR IGNORE INTO claim_reviews (portal_id, headline, body, article_author, published_at, article_url ,language) "
                                  "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                 (portal_id, claim["headline"], claim["body"], claim["author_factcheck"],
-                                            claim["published_at"],factcheck_url, claim["language"]))
+                                 (portal_id, claim.get("headline"), claim.get("body"), claim.get("author_factcheck"),
+                                            claim.get("published_at"),factcheck_url, claim.get("language")))
                     review_id = conn.execute("SELECT id FROM claim_reviews WHERE  article_url = ?", (factcheck_url,)).fetchone()[0]
 
                     #Claim
                     conn.execute(
                         "INSERT OR IGNORE INTO claims (claim, claim_author, stated_at) VALUES (?, ?, ?)",
-                        (claim["claim"], claim["author_claim"], claim["stated_at"]))
+                        ( claim.get("claim"), claim.get("author_claim"), claim.get("stated_at")))
                     claim_id = conn.execute("SELECT id FROM claims WHERE claim IS ? AND claim_author IS ?",
-                                            (claim["claim"], claim["author_claim"])).fetchone()[0]
+                                            (claim.get("claim"), claim.get("author_claim"))).fetchone()[0]
 
                     #claim_ratings
                     conn.execute("""INSERT OR IGNORE INTO  claim_ratings (claim_review_id, claim_id, rating_original)
                                         VALUES (?, ?, ?)""",
-                                     (review_id, claim_id, claim["original_rating"]))
+                                     (review_id, claim_id, claim.get("original_rating")))
                     conn.commit()
                     logger.debug(f"Successfully saved {len(claims_data)} claim(s) for {factcheck_url}")
         except sqlite3.Error as e:
             logger.error(f"SQLite error saving fact check {factcheck_url}: {e}")
+        except Exception as e:
+            logger.error(f"Error saving fact check {factcheck_url}: {e}")
 
     def get_as_pd(self):
         """
@@ -196,13 +198,15 @@ class FactCheckManager:
 
         try:
             with self._get_connection() as conn:
-                return pd.read_sql_query("""SELECT *
+                df =  pd.read_sql_query("""SELECT *
                                         FROM portals
                                                JOIN claim_reviews ON portals.id = claim_reviews.portal_id
                                                JOIN
                                            claim_ratings ON claim_ratings.claim_review_id = claim_reviews.id
                                                JOIN
                                            claims ON claims.id = claim_ratings.claim_id """, conn)
+                df = df.loc[:, ~df.columns.duplicated()]
+                return df
         except Exception as e:
             logger.error(f"Error fetching data to pandas DataFrame: {e}")
             return pd.DataFrame()
@@ -223,3 +227,39 @@ class FactCheckManager:
                 logger.debug(f"Successfully exported data to CSV at {path}")
         except Exception as e:
             logger.error(f"Error exporting data to CSV: {e}")
+
+    def get_rdf_export_data(self):
+        """
+        Returns all fact-check data as a Pandas DataFrame,
+        with the IDs explicitly named to avoid conflicts.
+
+        :return:pandas DataFrame containing all fact-check data with explicit IDs .
+        """
+        try:
+            with self._get_connection() as conn:
+                query = """
+                        SELECT cr.id AS review_id, \
+                               cr.headline, \
+                               cr.body, \
+                               cr.article_author, \
+                               cr.published_at, \
+                               cr.article_url, \
+                               cr.language, \
+                               c.id  AS claim_id, \
+                               c.claim, \
+                               c.claim_author, \
+                               c.stated_at, \
+                               p.id  AS portal_id, \
+                               p.portal_name, \
+                               p.portal_url, \
+                               rat.rating_original
+                        FROM claim_reviews cr
+                                 JOIN portals p ON cr.portal_id = p.id
+                                 JOIN claim_ratings rat ON rat.claim_review_id = cr.id
+                                 JOIN claims c ON rat.claim_id = c.id \
+                        """
+                logger.debug("Successfully fetched data for RDF export.")
+                return pd.read_sql_query(query, conn)
+        except Exception as e:
+            logger.error(f"Error fetching data for RDF export: {e}")
+            return pd.DataFrame()
