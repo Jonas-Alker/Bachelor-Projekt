@@ -6,6 +6,7 @@ from src.parser.parser_controller import parse
 import src.storage.html_cache_manager as html_cache_manager
 from src.preprocessor import preprocessor_controller
 from src.storage import fact_check_manager
+from src.exporter.rdf_exporter import export_to_turtle
 import logging
 import logging.config
 from logging_config import LOGGING_SETUP
@@ -17,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 CONFIG_PORTALS = "config/portals.json"
 PORTAL_DATA = "data/input/url_list.json"
-OUTPUT = "data/output/export.csv"
+OUTPUT_CSV = "data/output/factchecks_export.csv"
+OUTPUT_TTL = "data/output/faktchecks_export.ttl"
 
 def _load_json_data(file_path):
     """
@@ -72,7 +74,7 @@ def main():
 
     logger.info("Start Runtime pipeline...")
 
-    if args.html_db_version:
+    if args.html_db_version_mode:
         if args.html_db_version_mode[0] == "load":
             logger.info("Start Loading given html database...")
             try:
@@ -91,7 +93,7 @@ def main():
     else:
         hcm = html_cache_manager.HTMLCacheManager(version=args.html_db_version, mode="create")
 
-    if args.factcheck_db_version:
+    if args.factcheck_db_version_mode:
         if args.factcheck_db_version_mode == "load":
             logger.info("Start Loading given factcheck database...")
             try:
@@ -122,6 +124,12 @@ def main():
             search_sitemap_by_url(portal["portal"], portal["url"], hcm)
 
     logger.info("Finished Crawling...")
+
+    existing_urls = fcm.get_existing_article_urls()
+    if existing_urls:
+        logger.info(f"Found {len(existing_urls)} fact-checks already in the database. Filtering HTML cache...")
+        hcm.delete_urls_bulk(existing_urls)
+        logger.info("Successfully filtered existing URLs from cache.")
 
     if args.use_preprocessor:
         logger.info("Start Preprocessing...")
@@ -154,6 +162,8 @@ def main():
             except Exception as e:
                 logger.error(f"Error: {e}")
 
-    fcm.export_as_csv(OUTPUT)
+    fcm.export_as_csv(OUTPUT_CSV)
+    export_to_turtle(fcm, OUTPUT_TTL)
 if __name__ == "__main__":
+
     main()

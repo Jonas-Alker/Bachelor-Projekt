@@ -23,7 +23,7 @@ class FactCheckManager:
                                 or if mode is "copy" but the source_path file does not exist.
             ValueError:         If mode is "copy" but no source_path is provided.
         """
-        self.db_path = os.path.join(base_path, f"factencheck_{version}.db")
+        self.db_path = os.path.join(base_path, f"factcheck_{version}.db")
 
         if mode == "load":
             if not os.path.exists(self.db_path):
@@ -224,7 +224,7 @@ class FactCheckManager:
                                         claims ON claims.id = claim_ratings.claim_id """, conn)
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 df.to_csv(path, index=False)
-                logger.debug(f"Successfully exported data to CSV at {path}")
+                logger.info(f"Successfully exported data to CSV at {path}")
         except Exception as e:
             logger.error(f"Error exporting data to CSV: {e}")
 
@@ -263,3 +263,16 @@ class FactCheckManager:
         except Exception as e:
             logger.error(f"Error fetching data for RDF export: {e}")
             return pd.DataFrame()
+
+    def get_existing_article_urls(self):
+        """
+        Returns a list of all unique fact-check article URLs currently stored in the database.
+        """
+        try:
+            with self._get_connection() as conn:
+                rows = conn.execute(
+                    "SELECT DISTINCT article_url FROM claim_reviews WHERE article_url IS NOT NULL").fetchall()
+                return [row['article_url'] for row in rows]
+        except Exception as e:
+            logger.error(f"Error fetching existing URLs: {e}")
+            return []
