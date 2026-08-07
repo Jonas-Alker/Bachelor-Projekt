@@ -16,6 +16,20 @@ The project is strictly separated by responsibilities. The generated and require
 
 ---
 
+## 🛠 Installation
+
+Before running the scripts or modifying the configurations, ensure you have all required Python dependencies installed. You can easily install them using pip:
+
+1. Clone this repository and navigate into the project folder:
+```
+git clone <REPOSITORY_URL>
+cd <REPOSITORY_FOLDER_NAME>
+```
+2. Install all required Python dependencies:
+```
+pip install -r requirements.txt
+```
+
 ## ⚙️ Configuration Before Start
 
 Before the scripts can be executed, the following files should be checked and populated if necessary:
