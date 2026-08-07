@@ -7,6 +7,7 @@ import logging
 
 #Getting Logger
 logger = logging.getLogger(__name__)
+logging.getLogger("usp").setLevel(logging.WARNING)
 
 def search_sitemap_by_url(portal_name, portal_url, db):
     """Orchestrates the crawling process for a specific portal using sitemaps.
