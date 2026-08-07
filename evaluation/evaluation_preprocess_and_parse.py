@@ -158,17 +158,6 @@ def _get_ground_truth_df(path):
 # 3. Evaluation calls
 # =====================================================================
 
-def test_llm_directly_extraction_quality_against_claims_kg():
-    """
-    Evaluates direct LLM extraction against Claims KG and
-    outputs the data in an xlsx file (evaluation_data/output/llm_directly_against_claims_kg.xlsx)
-    """
-    portal_data = _load_json_data(Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json")
-    claimsKG_df, _ = _get_claimsKG_df(portal_data)
-    pipeline_df , website_count, total_processing_time = _get_pipeline_df(portal_data, llm_based= True, preprocessed= False)
-    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "llm_directly_against_claims_kg.xlsx"
-    _evaluate_to_exel(claimsKG_df, pipeline_df ,"ClaimsKG", "LLM_direct", website_count, total_processing_time, output_path)
-
 def test_llm_directly_extraction_quality_against_ground_truth(language = "english"):
     """
     Evaluates direct LLM extraction against ground_truth data (evaluation_data/input/ground_truth) for the language given
@@ -180,17 +169,6 @@ def test_llm_directly_extraction_quality_against_ground_truth(language = "englis
     pipeline_df , website_count, total_processing_time =_get_pipeline_df(portals_data, llm_based= True, preprocessed= False)
     output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / f"llm_directly_against_ground_truth_{language}.xlsx"
     _evaluate_to_exel(ground_truth_df,pipeline_df, "ground_truth", "LLM_direct", website_count, total_processing_time, output_path)
-
-def test_llm_preprocessed_extraction_quality_against_claims_kg():
-    """
-    Evaluates preprocessed LLM extraction against Claims KG and
-    outputs the data in an xlsx file (evaluation_data/output/llm_preprocessed_against_claims_kg.xlsx)
-    """
-    portal_data = _load_json_data(Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json")
-    claimsKG_df, _ = _get_claimsKG_df(portal_data)
-    pipeline_df, website_count, total_processing_time = _get_pipeline_df(portal_data, llm_based=True, preprocessed=True)
-    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "llm_preprocessed_against_claims_kg.xlsx"
-    _evaluate_to_exel(claimsKG_df, pipeline_df, "ClaimsKG", "LLM_direct", website_count, total_processing_time, output_path)
 
 def test_llm_preprocessed_extraction_quality_against_ground_truth(language = "english"):
     """
@@ -213,17 +191,6 @@ def test_claims_kg_quality_against_ground_truth():
     claimsKG_df, website_count = _get_claimsKG_df(portals_data)
     output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "claims_kg_against_ground_truth.xlsx"
     _evaluate_to_exel(ground_truth_df,claimsKG_df, "ground_truth", "ClaimsKG", website_count, 0, output_path)
-
-def test_parser_against_claims_kg():
-    """
-    Evaluates generated parser extraction against Claims KG and
-    outputs the data in an xlsx file (evaluation_data/output/parser_against_claims_kg.xlsx)
-    """
-    portal_data = _load_json_data(Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json")
-    claimsKG_df, _ = _get_claimsKG_df(portal_data)
-    pipeline_df, website_count, total_processing_time = _get_pipeline_df(portal_data, llm_based=False, preprocessed=False)
-    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "parser_against_claims_kg.xlsx"
-    _evaluate_to_exel(claimsKG_df, pipeline_df, "ClaimsKG", "generated_parser", website_count, total_processing_time, output_path)
 
 def test_parser_against_ground_truth(language = "english"):
     """
@@ -310,3 +277,36 @@ def extraction_parser(portal, html):
     :return: extraction data
     """
     return parser_controller.parse(portal, html, False)
+
+def test_parser_against_claims_kg():
+    """
+    Evaluates generated parser extraction against Claims KG and
+    outputs the data in an xlsx file (evaluation_data/output/parser_against_claims_kg.xlsx)
+    """
+    portal_data = _load_json_data(Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json")
+    claimsKG_df, _ = _get_claimsKG_df(portal_data)
+    pipeline_df, website_count, total_processing_time = _get_pipeline_df(portal_data, llm_based=False, preprocessed=False)
+    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "parser_against_claims_kg.xlsx"
+    _evaluate_to_exel(claimsKG_df, pipeline_df, "ClaimsKG", "generated_parser", website_count, total_processing_time, output_path)
+
+def test_llm_preprocessed_extraction_quality_against_claims_kg():
+    """
+    Evaluates preprocessed LLM extraction against Claims KG and
+    outputs the data in an xlsx file (evaluation_data/output/llm_preprocessed_against_claims_kg.xlsx)
+    """
+    portal_data = _load_json_data(Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json")
+    claimsKG_df, _ = _get_claimsKG_df(portal_data)
+    pipeline_df, website_count, total_processing_time = _get_pipeline_df(portal_data, llm_based=True, preprocessed=True)
+    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "llm_preprocessed_against_claims_kg.xlsx"
+    _evaluate_to_exel(claimsKG_df, pipeline_df, "ClaimsKG", "LLM_direct", website_count, total_processing_time, output_path)
+
+def test_llm_directly_extraction_quality_against_claims_kg():
+    """
+    Evaluates direct LLM extraction against Claims KG and
+    outputs the data in an xlsx file (evaluation_data/output/llm_directly_against_claims_kg.xlsx)
+    """
+    portal_data = _load_json_data(Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json")
+    claimsKG_df, _ = _get_claimsKG_df(portal_data)
+    pipeline_df , website_count, total_processing_time = _get_pipeline_df(portal_data, llm_based= True, preprocessed= False)
+    output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "llm_directly_against_claims_kg.xlsx"
+    _evaluate_to_exel(claimsKG_df, pipeline_df ,"ClaimsKG", "LLM_direct", website_count, total_processing_time, output_path)
