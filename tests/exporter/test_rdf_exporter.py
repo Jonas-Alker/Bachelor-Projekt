@@ -75,12 +75,18 @@ def test_export_success_and_graph_structure(mock_info, mock_db, tmp_path):
     CKG = Namespace("http://data.gesis.org/claimskg/")
     SCHEMA = Namespace("https://schema.org/")
 
+    from rdflib import Literal
+
     review_uri = CKG["review_1_10"]
     prop_uri = CKG["proposition_10"]
     rating_uri = CKG["rating_1_10"]
+    utterance_uri = CKG["utterance_10"]
+    ling_repr_uri = CKG["linguistic_repr_10"]
 
     assert (review_uri, SCHEMA.itemReviewed, prop_uri) in g
     assert (review_uri, SCHEMA.reviewRating, rating_uri) in g
+    assert (utterance_uri, CKG.hasLinguisticRepresentation, ling_repr_uri) in g
+    assert (ling_repr_uri, SCHEMA.text, Literal('Der Himmel ist grün.', lang='de')) in g
 
 
 def test_export_date_format_fallback(mock_db, dummy_rdf_df, tmp_path):

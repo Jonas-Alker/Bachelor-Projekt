@@ -63,7 +63,10 @@ def export_to_turtle(db, output_path):
 
         #Utterance
         if pd.notna(row['claim']):
-            g.add((utterance_uri, SCHEMA.text, Literal(row['claim'], lang=row['language'])))
+            ling_repr_uri = CKG[f"linguistic_repr_{row['claim_id']}"]
+            g.add((ling_repr_uri, RDF.type, SCHEMA.Text))
+            g.add((ling_repr_uri, SCHEMA.text, Literal(row['claim'], lang=row['language'])))
+            g.add((utterance_uri, CKG.hasLinguisticRepresentation, ling_repr_uri))
 
         #Context
         g.add((context_uri, RDF.type, SCHEMA.Intangible))
