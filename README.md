@@ -4,7 +4,7 @@ This repository contains the code and data pipeline for the bachelor's thesis in
 
 ---
 
-## 📂 Folder Structure & Data Storage
+## 📂 Folder Structure & Data Storage 
 
 The project is strictly separated by responsibilities. The generated and required data is managed in the following directories:
 
@@ -83,3 +83,4 @@ Controls the systematic evaluation of the pipeline's quality. All outputs are sa
 ---
 
 **Author:** Jonas Maximilian Alker
+
