@@ -188,9 +188,10 @@ def test_claims_kg_quality_against_ground_truth():
     and outputs the data in an xlsx file (evaluation_data/output/claims_kg_against_ground_truth.xlsx)
     """
     ground_truth_df, portals_data = _get_ground_truth_df(_get_input_path("english"))
-    claimsKG_df, website_count = _get_claimsKG_df(portals_data)
+    portal_data = _load_json_data(Path(__file__).resolve().parent / "evaluation_data" / "input" / "claim_comparison_claimsKG.json")
+    claimsKG_df, _ = _get_claimsKG_df(portal_data)
     output_path = Path(__file__).resolve().parent / "evaluation_data" / "output" / "claims_kg_against_ground_truth.xlsx"
-    _evaluate_to_exel(ground_truth_df,claimsKG_df, "ground_truth", "ClaimsKG", website_count, 0, output_path)
+    _evaluate_to_exel(ground_truth_df,claimsKG_df, "ground_truth", "ClaimsKG", -1, 0, output_path)
 
 def test_parser_against_ground_truth(language = "english"):
     """
